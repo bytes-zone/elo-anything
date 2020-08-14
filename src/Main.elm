@@ -5,9 +5,11 @@ import Browser exposing (Document)
 import Css
 import Dict exposing (Dict)
 import Elo
+import File.Download as Download
 import Html.Styled as WildWildHtml
 import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
+import Json.Encode as Encode exposing (encode)
 import List.Extra
 import Player exposing (Player)
 import Random exposing (Generator)
@@ -33,6 +35,7 @@ type Msg
     | KeeperWantsToAddNewPlayer
     | StartMatchBetween ( Player, Player )
     | MatchFinished Player Elo.Outcome Player
+    | KeeperWantsToDownloadStandings
 
 
 init : Flags -> ( Model, Cmd Msg )
@@ -83,6 +86,14 @@ update msg model =
             , Cmd.none
             )
                 |> startNextMatchIfPossible
+
+        KeeperWantsToDownloadStandings ->
+            ( model
+            , Download.string
+                "standings.json"
+                "application/json"
+                (encode 2 (Encode.dict identity Player.encode model.players))
+            )
 
 
 startNextMatchIfPossible : ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
@@ -146,6 +157,7 @@ view model =
         [ Html.main_ []
             [ rankings (Dict.values model.players)
             , newPlayerForm model
+            , Html.button [ Events.onClick KeeperWantsToDownloadStandings ] [ Html.text "Download Standings" ]
             , case model.currentMatch of
                 Just ( playerA, playerB ) ->
                     let
@@ -204,8 +216,11 @@ view model =
                                 ]
                             ]
                             [ activePlayer chanceAWins playerA upsideA (MatchFinished playerA Elo.WonAgainst playerB)
-                            , Html.p [] [ Html.text "vs." ]
-                            , activePlayer (1 - chanceAWins) playerB upsideB (MatchFinished playerA Elo.WonAgainst playerB)
+                            , Html.div []
+                                [ Html.p [] [ Html.text "vs." ]
+                                , Html.button [ Events.onClick (MatchFinished playerA Elo.DrewWith playerB) ] [ Html.text "It's a tie!" ]
+                                ]
+                            , activePlayer (1 - chanceAWins) playerB upsideB (MatchFinished playerB Elo.WonAgainst playerA)
                             ]
                         ]
 
