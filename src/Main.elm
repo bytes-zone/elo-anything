@@ -28,7 +28,17 @@ type Msg
 
 init : Flags -> ( Model, Cmd Msg )
 init _ =
-    ( { players = Dict.empty, newPlayerName = "" }, Cmd.none )
+    ( { players =
+            Dict.fromList
+                [ ( "a", Player.init "a" )
+                , ( "b", Player.init "b" )
+                , ( "c", Player.init "c" )
+                , ( "d", Player.init "d" )
+                ]
+      , newPlayerName = ""
+      }
+    , Cmd.none
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
