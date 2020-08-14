@@ -251,7 +251,7 @@ percent chanceToWin =
 rankings : List Player -> Html msg
 rankings players =
     players
-        |> List.sortBy .rating
+        |> List.sortBy (\player -> -player.rating)
         |> List.indexedMap
             (\rank player ->
                 Html.tr
