@@ -1,4 +1,4 @@
-module Elo exposing (Outcome(..), initialRating, newRating, sensitiveKFactor)
+module Elo exposing (Outcome(..), initialRating, newRating, odds, sensitiveKFactor)
 
 {-| Calculate [Elo](https://en.wikipedia.org/wiki/Elo_rating_system) scores.
 -}
