@@ -142,14 +142,44 @@ view model =
                     in
                     Html.section
                         [ css
-                            [ Css.displayFlex
-                            , Css.justifyContent Css.spaceAround
-                            , Css.width (Css.pct 100)
+                            [ Css.maxWidth (Css.px 1024)
+                            , Css.margin2 Css.zero Css.auto
                             ]
                         ]
-                        [ activePlayer chanceAWins playerB
-                        , Html.p [] [ Html.text "vs." ]
-                        , activePlayer (1 - chanceAWins) playerB
+                        [ Html.div
+                            [ css [ Css.backgroundColor (Css.hex "#EEE"), Css.displayFlex ] ]
+                            [ Html.p
+                                [ css
+                                    [ Css.flexGrow (Css.num chanceAWins)
+                                    , Css.paddingRight (Css.px 5)
+                                    , Css.textAlign Css.right
+                                    , Css.backgroundColor (Css.hex "#1E90FF")
+                                    , Css.lineHeight (Css.px 50)
+                                    , Css.margin Css.zero
+                                    ]
+                                ]
+                                [ Html.text (percent chanceAWins) ]
+                            , Html.p
+                                [ css
+                                    [ Css.flexGrow (Css.num (1 - chanceAWins))
+                                    , Css.paddingLeft (Css.px 5)
+                                    , Css.lineHeight (Css.px 50)
+                                    , Css.margin Css.zero
+                                    ]
+                                ]
+                                [ Html.text (percent (1 - chanceAWins)) ]
+                            ]
+                        , Html.div
+                            [ css
+                                [ Css.displayFlex
+                                , Css.justifyContent Css.spaceAround
+                                , Css.width (Css.pct 100)
+                                ]
+                            ]
+                            [ activePlayer chanceAWins playerB
+                            , Html.p [] [ Html.text "vs." ]
+                            , activePlayer (1 - chanceAWins) playerB
+                            ]
                         ]
 
                 Nothing ->
@@ -170,11 +200,12 @@ activePlayer chanceToWin player =
             , Html.text (String.fromInt player.matches)
             , Html.text " matches."
             ]
-        , Html.p []
-            [ toFloat (round (chanceToWin * 10000)) / 100 |> String.fromFloat |> Html.text
-            , Html.text "% chance to win"
-            ]
         ]
+
+
+percent : Float -> String
+percent chanceToWin =
+    (toFloat (round (chanceToWin * 10000)) / 100 |> String.fromFloat) ++ "%"
 
 
 rankings : List Player -> Html msg
