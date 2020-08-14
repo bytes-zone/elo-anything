@@ -5,14 +5,18 @@ import Browser exposing (Document)
 import Css
 import Dict exposing (Dict)
 import Elo
+import File exposing (File)
 import File.Download as Download
+import File.Select as Select
 import Html.Styled as WildWildHtml
 import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
+import Json.Decode as Decode
 import Json.Encode as Encode exposing (encode)
 import List.Extra
 import Player exposing (Player)
 import Random exposing (Generator)
+import Task
 
 
 type alias Flags =
@@ -35,7 +39,10 @@ type Msg
     | KeeperWantsToAddNewPlayer
     | StartMatchBetween ( Player, Player )
     | MatchFinished Player Elo.Outcome Player
-    | KeeperWantsToDownloadStandings
+    | KeeperWantsToSaveStandings
+    | KeeperWantsToLoadStandings
+    | SelectedStandingsFile File
+    | LoadedStandings (Result String (Dict String Player))
 
 
 init : Flags -> ( Model, Cmd Msg )
@@ -87,13 +94,49 @@ update msg model =
             )
                 |> startNextMatchIfPossible
 
-        KeeperWantsToDownloadStandings ->
+        KeeperWantsToSaveStandings ->
             ( model
             , Download.string
                 "standings.json"
                 "application/json"
                 (encode 2 (Encode.dict identity Player.encode model.players))
             )
+
+        KeeperWantsToLoadStandings ->
+            ( model
+            , Select.file [ "application/json" ] SelectedStandingsFile
+            )
+
+        SelectedStandingsFile file ->
+            ( model
+            , File.toString file
+                |> Task.andThen
+                    (\jsonString ->
+                        case Decode.decodeString (Decode.dict Player.decoder) jsonString of
+                            Ok decoded ->
+                                Task.succeed decoded
+
+                            Err err ->
+                                Task.fail (Decode.errorToString err)
+                    )
+                |> Task.attempt LoadedStandings
+            )
+
+        LoadedStandings (Ok players) ->
+            ( { model
+                | players = players
+                , currentMatch = Nothing
+              }
+            , Cmd.none
+            )
+                |> startNextMatchIfPossible
+
+        LoadedStandings (Err problem) ->
+            let
+                _ =
+                    Debug.log "problem" problem
+            in
+            ( model, Cmd.none )
 
 
 startNextMatchIfPossible : ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
@@ -157,7 +200,8 @@ view model =
         [ Html.main_ []
             [ rankings (Dict.values model.players)
             , newPlayerForm model
-            , Html.button [ Events.onClick KeeperWantsToDownloadStandings ] [ Html.text "Download Standings" ]
+            , Html.button [ Events.onClick KeeperWantsToSaveStandings ] [ Html.text "Save Standings" ]
+            , Html.button [ Events.onClick KeeperWantsToLoadStandings ] [ Html.text "Load Standings" ]
             , case model.currentMatch of
                 Just ( playerA, playerB ) ->
                     let
