@@ -37,13 +37,7 @@ type Msg
 
 init : Flags -> ( Model, Cmd Msg )
 init _ =
-    ( { players =
-            Dict.fromList
-                [ ( "a", Player.init "a" )
-                , ( "b", Player.init "b" )
-                , ( "c", Player.init "c" )
-                , ( "d", Player.init "d" )
-                ]
+    ( { players = Dict.empty
       , currentMatch = Nothing
       , newPlayerName = ""
       }
@@ -67,6 +61,7 @@ update msg model =
               }
             , Cmd.none
             )
+                |> startNextMatchIfPossible
 
         StartMatchBetween players ->
             ( { model | currentMatch = Just players }
