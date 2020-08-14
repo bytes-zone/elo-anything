@@ -188,9 +188,9 @@ view model =
                                 , Css.width (Css.pct 100)
                                 ]
                             ]
-                            [ activePlayer chanceAWins playerA playerB
+                            [ activePlayer chanceAWins playerA (MatchFinished playerA Elo.WonAgainst playerB)
                             , Html.p [] [ Html.text "vs." ]
-                            , activePlayer (1 - chanceAWins) playerB playerA
+                            , activePlayer (1 - chanceAWins) playerB (MatchFinished playerA Elo.WonAgainst playerB)
                             ]
                         ]
 
@@ -202,8 +202,8 @@ view model =
     }
 
 
-activePlayer : Float -> Player -> Player -> Html Msg
-activePlayer chanceToWin player opponent =
+activePlayer : Float -> Player -> Msg -> Html Msg
+activePlayer chanceToWin player winMsg =
     Html.div []
         [ Html.h2 [] [ Html.text player.name ]
         , Html.p []
@@ -213,7 +213,7 @@ activePlayer chanceToWin player opponent =
             , Html.text " matches."
             ]
         , Html.button
-            [ Events.onClick (MatchFinished player Elo.WonAgainst opponent) ]
+            [ Events.onClick winMsg ]
             [ Html.text (player.name ++ " wins!") ]
         ]
 
