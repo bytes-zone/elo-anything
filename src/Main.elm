@@ -71,7 +71,7 @@ update msg model =
         MatchFinished playerA outcome playerB ->
             let
                 ( playerARating, playerBRating ) =
-                    Elo.newRating Elo.sensitiveKFactor playerA.rating outcome playerB.rating
+                    newRating playerA.rating outcome playerB.rating
             in
             ( { model
                 | players =
@@ -151,6 +151,21 @@ view model =
                     let
                         chanceAWins =
                             Elo.odds playerA.rating playerB.rating
+
+                        chanceBWins =
+                            1 - chanceAWins
+
+                        ( ratingAWins, _ ) =
+                            newRating playerA.rating Elo.WonAgainst playerB.rating
+
+                        ( ratingBWins, _ ) =
+                            newRating playerB.rating Elo.WonAgainst playerA.rating
+
+                        upsideA =
+                            ratingAWins - playerA.rating
+
+                        upsideB =
+                            ratingBWins - playerB.rating
                     in
                     Html.section
                         [ css
@@ -188,9 +203,9 @@ view model =
                                 , Css.width (Css.pct 100)
                                 ]
                             ]
-                            [ activePlayer chanceAWins playerA (MatchFinished playerA Elo.WonAgainst playerB)
+                            [ activePlayer chanceAWins playerA upsideA (MatchFinished playerA Elo.WonAgainst playerB)
                             , Html.p [] [ Html.text "vs." ]
-                            , activePlayer (1 - chanceAWins) playerB (MatchFinished playerA Elo.WonAgainst playerB)
+                            , activePlayer (1 - chanceAWins) playerB upsideB (MatchFinished playerA Elo.WonAgainst playerB)
                             ]
                         ]
 
@@ -202,8 +217,8 @@ view model =
     }
 
 
-activePlayer : Float -> Player -> Msg -> Html Msg
-activePlayer chanceToWin player winMsg =
+activePlayer : Float -> Player -> Int -> Msg -> Html Msg
+activePlayer chanceToWin player upside winMsg =
     Html.div []
         [ Html.h2 [] [ Html.text player.name ]
         , Html.p []
@@ -212,10 +227,20 @@ activePlayer chanceToWin player winMsg =
             , Html.text (String.fromInt player.matches)
             , Html.text " matches."
             ]
+        , Html.p []
+            [ Html.text "Stands to gain "
+            , Html.text (String.fromInt upside)
+            , Html.text " points."
+            ]
         , Html.button
             [ Events.onClick winMsg ]
             [ Html.text (player.name ++ " wins!") ]
         ]
+
+
+newRating : Int -> Elo.Outcome -> Int -> ( Int, Int )
+newRating =
+    Elo.newRating Elo.sensitiveKFactor
 
 
 percent : Float -> String
