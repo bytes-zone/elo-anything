@@ -32,6 +32,7 @@ type Msg
     = KeeperUpdatedNewPlayerName String
     | KeeperWantsToAddNewPlayer
     | StartMatchBetween ( Player, Player )
+    | MatchFinished Player Elo.Outcome Player
 
 
 init : Flags -> ( Model, Cmd Msg )
@@ -71,6 +72,22 @@ update msg model =
             ( { model | currentMatch = Just players }
             , Cmd.none
             )
+
+        MatchFinished playerA outcome playerB ->
+            let
+                ( playerARating, playerBRating ) =
+                    Elo.newRating Elo.sensitiveKFactor playerA.rating outcome playerB.rating
+            in
+            ( { model
+                | players =
+                    model.players
+                        |> Dict.update playerA.name (Maybe.map (Player.incrementMatchesPlayed >> Player.setRating playerARating))
+                        |> Dict.update playerB.name (Maybe.map (Player.incrementMatchesPlayed >> Player.setRating playerBRating))
+                , currentMatch = Nothing
+              }
+            , Cmd.none
+            )
+                |> startNextMatchIfPossible
 
 
 startNextMatchIfPossible : ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
@@ -176,9 +193,9 @@ view model =
                                 , Css.width (Css.pct 100)
                                 ]
                             ]
-                            [ activePlayer chanceAWins playerB
+                            [ activePlayer chanceAWins playerA playerB
                             , Html.p [] [ Html.text "vs." ]
-                            , activePlayer (1 - chanceAWins) playerB
+                            , activePlayer (1 - chanceAWins) playerB playerA
                             ]
                         ]
 
@@ -190,8 +207,8 @@ view model =
     }
 
 
-activePlayer : Float -> Player -> Html msg
-activePlayer chanceToWin player =
+activePlayer : Float -> Player -> Player -> Html Msg
+activePlayer chanceToWin player opponent =
     Html.div []
         [ Html.h2 [] [ Html.text player.name ]
         , Html.p []
@@ -200,6 +217,9 @@ activePlayer chanceToWin player =
             , Html.text (String.fromInt player.matches)
             , Html.text " matches."
             ]
+        , Html.button
+            [ Events.onClick (MatchFinished player Elo.WonAgainst opponent) ]
+            [ Html.text (player.name ++ " wins!") ]
         ]
 
 
