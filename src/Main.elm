@@ -75,11 +75,12 @@ rankings : List Player -> Html msg
 rankings players =
     players
         |> List.sortBy .rating
-        |> List.map
-            (\player ->
+        |> List.indexedMap
+            (\rank player ->
                 Html.tr
                     []
-                    [ Html.td [] [ Html.text player.name ]
+                    [ Html.td [] [ Html.text (String.fromInt (rank + 1)) ]
+                    , Html.td [] [ Html.text player.name ]
                     , Html.td [] [ Html.text (String.fromInt player.rating) ]
                     , Html.td [] [ Html.text (String.fromInt player.matches) ]
                     ]
@@ -87,7 +88,8 @@ rankings players =
         |> (::)
             (Html.tr
                 []
-                [ Html.th [] [ Html.text "Name" ]
+                [ Html.th [] [ Html.text "Rank" ]
+                , Html.th [] [ Html.text "Name" ]
                 , Html.th [] [ Html.text "Rating" ]
                 , Html.th [] [ Html.text "Matches" ]
                 ]
