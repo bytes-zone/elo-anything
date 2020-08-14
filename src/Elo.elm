@@ -1,4 +1,4 @@
-module Elo exposing (..)
+module Elo exposing (Outcome(..), initialRating, newRating, sensitiveKFactor)
 
 {-| Calculate [Elo](https://en.wikipedia.org/wiki/Elo_rating_system) scores.
 -}
@@ -46,38 +46,46 @@ odds a b =
 
 
 type Outcome
-    = Win
-    | Draw
-    | Loss
+    = WonAgainst
+    | DrewWith
+    | LostTo
+
+
+invertOutcome : Outcome -> Outcome
+invertOutcome outcome =
+    case outcome of
+        WonAgainst ->
+            LostTo
+
+        DrewWith ->
+            DrewWith
+
+        LostTo ->
+            WonAgainst
 
 
 score : Outcome -> Float
 score outcome =
     case outcome of
-        Win ->
+        WonAgainst ->
             1
 
-        Draw ->
+        DrewWith ->
             0.5
 
-        Loss ->
+        LostTo ->
             0
 
 
-{-| Player a's new rating given the outcome against player b.
+{-| Both player's new ratings given the outcome of the match.
 
 For example, to say player a won against player b:
 
-    newRating sensitiveKFactor Win playerARating playerBRating
-
-to get player b's score, just flip it:
-
-    newRating sensitiveKFactor Lose playerBRating playerARating
+    newRating sensitiveKFactor playerARating WonAgainst playerBRating
 
 -}
-newRating : Int -> Outcome -> Int -> Int -> Int
-newRating kFactor outcome a b =
-    toFloat a
-        + toFloat kFactor
-        * (score outcome - odds a b)
-        |> round
+newRating : Int -> Int -> Outcome -> Int -> ( Int, Int )
+newRating kFactor a outcome b =
+    ( toFloat a + toFloat kFactor * (score outcome - odds a b) |> round
+    , toFloat b + toFloat kFactor * (score (invertOutcome outcome) - odds b a) |> round
+    )
