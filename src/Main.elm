@@ -2,9 +2,11 @@ module Main exposing (..)
 
 import Accessibility.Styled as Html exposing (Html)
 import Browser exposing (Document)
+import Css
 import Dict exposing (Dict)
 import Elo
 import Html.Styled as WildWildHtml
+import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
 import List.Extra
 import Player exposing (Player)
@@ -134,7 +136,21 @@ view model =
             , newPlayerForm model
             , case model.currentMatch of
                 Just ( playerA, playerB ) ->
-                    Html.text (playerA.name ++ " vs. " ++ playerB.name)
+                    let
+                        chanceAWins =
+                            Elo.odds playerA.rating playerB.rating
+                    in
+                    Html.section
+                        [ css
+                            [ Css.displayFlex
+                            , Css.justifyContent Css.spaceAround
+                            , Css.width (Css.pct 100)
+                            ]
+                        ]
+                        [ activePlayer chanceAWins playerB
+                        , Html.p [] [ Html.text "vs." ]
+                        , activePlayer (1 - chanceAWins) playerB
+                        ]
 
                 Nothing ->
                     Html.text "no match right now... add some players, maybe?"
@@ -142,6 +158,23 @@ view model =
             |> Html.toUnstyled
         ]
     }
+
+
+activePlayer : Float -> Player -> Html msg
+activePlayer chanceToWin player =
+    Html.div []
+        [ Html.h2 [] [ Html.text player.name ]
+        , Html.p []
+            [ Html.text (String.fromInt player.rating)
+            , Html.text " after "
+            , Html.text (String.fromInt player.matches)
+            , Html.text " matches."
+            ]
+        , Html.p []
+            [ toFloat (round (chanceToWin * 10000)) / 100 |> String.fromFloat |> Html.text
+            , Html.text "% chance to win"
+            ]
+        ]
 
 
 rankings : List Player -> Html msg
