@@ -176,14 +176,22 @@ match a b rest =
         |> List.Extra.uniquePairs
         |> List.map
             (\( left, right ) ->
-                ( (10 ^ 9) - abs (left.rating - right.rating) |> toFloat
+                ( abs (left.rating - right.rating) |> toFloat
                 , ( left, right )
                 )
             )
-        |> (\pairs ->
-                case pairs of
-                    first :: restPairs ->
-                        Random.weighted first restPairs
+        |> -- flip the ordering so that the smallest gap is the most likely to be picked.
+           (\weights ->
+                let
+                    maxDiff =
+                        List.maximum (List.map Tuple.first weights) |> Maybe.withDefault (10 ^ 9)
+                in
+                List.map (\( diff, pair ) -> ( maxDiff - diff, pair )) weights
+           )
+        |> (\weights ->
+                case weights of
+                    firstWeight :: restOfWeights ->
+                        Random.weighted firstWeight restOfWeights
 
                     _ ->
                         -- how did we get here? Unless... a and b were the same
