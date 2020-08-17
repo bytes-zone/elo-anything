@@ -178,6 +178,7 @@ match a b rest =
 
                     matchesPlayedAdjustment =
                         min left.matches right.matches
+                            |> (+) 2
                             |> clamp 2 10
                             |> toFloat
                             |> logBase 10
