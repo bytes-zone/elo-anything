@@ -165,10 +165,6 @@ startNextMatchIfPossible ( model, cmd ) =
 
 {-| We need at least two players to guarantee that we return two distinct
 players.
-
-In the future, we might want to consider the players with the closest rankings
-ahead of the players with the fewest matches. We'll see.
-
 -}
 match : Player -> Player -> List Player -> Generator ( Player, Player )
 match a b rest =
@@ -176,11 +172,22 @@ match a b rest =
         |> List.Extra.uniquePairs
         |> List.map
             (\( left, right ) ->
-                ( abs (left.rating - right.rating) |> toFloat
+                let
+                    weight =
+                        toFloat <| abs (left.rating - right.rating)
+
+                    matchesPlayedAdjustment =
+                        min left.matches right.matches
+                            |> clamp 1 10
+                            |> toFloat
+                            |> logBase 10
+                in
+                ( weight * matchesPlayedAdjustment
                 , ( left, right )
                 )
             )
-        |> -- flip the ordering so that the smallest gap is the most likely to be picked.
+        |> -- flip the ordering so that the smallest gap / match adjustment is the most
+           -- likely to be picked.
            (\weights ->
                 let
                     maxDiff =
