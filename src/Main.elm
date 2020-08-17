@@ -176,8 +176,7 @@ match a b rest =
         |> List.Extra.uniquePairs
         |> List.map
             (\( left, right ) ->
-                ( ((10 ^ 9) - abs (left.rating - right.rating) |> toFloat)
-                    / (toFloat (left.matches + right.matches) / 2)
+                ( (10 ^ 9) - abs (left.rating - right.rating) |> toFloat
                 , ( left, right )
                 )
             )
