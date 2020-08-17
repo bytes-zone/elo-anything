@@ -169,21 +169,11 @@ players.
 match : Player -> Player -> List Player -> Generator ( Player, Player )
 match a b rest =
     (a :: b :: rest)
+        |> atLeastTwoLeastPlayed
         |> List.Extra.uniquePairs
         |> List.map
             (\( left, right ) ->
-                let
-                    weight =
-                        toFloat <| abs (left.rating - right.rating)
-
-                    matchesPlayedAdjustment =
-                        min left.matches right.matches
-                            |> (+) 2
-                            |> clamp 2 10
-                            |> toFloat
-                            |> logBase 10
-                in
-                ( weight * matchesPlayedAdjustment
+                ( toFloat <| abs (left.rating - right.rating)
                 , ( left, right )
                 )
             )
@@ -206,6 +196,29 @@ match a b rest =
                         -- player? Sneaky caller!
                         Random.constant ( a, b )
            )
+
+
+atLeastTwoLeastPlayed : List Player -> List Player
+atLeastTwoLeastPlayed players =
+    let
+        slowlyIncreaseUntilMinimumPlayers : Int -> List Player
+        slowlyIncreaseUntilMinimumPlayers howManyMatches =
+            let
+                filtered =
+                    List.filter (\player -> player.matches <= howManyMatches) players
+            in
+            case filtered of
+                _ :: _ :: _ ->
+                    filtered
+
+                _ ->
+                    slowlyIncreaseUntilMinimumPlayers (howManyMatches + 1)
+    in
+    players
+        |> List.map .matches
+        |> List.minimum
+        |> Maybe.withDefault 0
+        |> slowlyIncreaseUntilMinimumPlayers
 
 
 view : Model -> Document Msg
