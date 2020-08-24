@@ -168,9 +168,23 @@ players.
 -}
 match : Player -> Player -> List Player -> Generator ( Player, Player )
 match a b rest =
-    (a :: b :: rest)
-        |> atLeastTwoLeastPlayed
+    let
+        allPlayers =
+            a :: b :: rest
+
+        minimumMatches =
+            allPlayers
+                |> List.map .matches
+                |> List.minimum
+                |> Maybe.withDefault 0
+
+        leastPlayed =
+            allPlayers
+                |> List.filter (\player -> player.matches == minimumMatches)
+    in
+    allPlayers
         |> List.Extra.uniquePairs
+        |> List.filter (\( left, right ) -> List.member left leastPlayed || List.member right leastPlayed)
         |> List.map
             (\( left, right ) ->
                 ( toFloat <| abs (left.rating - right.rating)
@@ -184,7 +198,7 @@ match a b rest =
                     maxDiff =
                         List.maximum (List.map Tuple.first weights) |> Maybe.withDefault (10 ^ 9)
                 in
-                List.map (\( diff, pair ) -> ( maxDiff - diff, pair )) weights
+                List.map (\( diff, pair ) -> ( (maxDiff - diff) ^ 2, pair )) weights
            )
         |> (\weights ->
                 case weights of
@@ -196,29 +210,6 @@ match a b rest =
                         -- player? Sneaky caller!
                         Random.constant ( a, b )
            )
-
-
-atLeastTwoLeastPlayed : List Player -> List Player
-atLeastTwoLeastPlayed players =
-    let
-        slowlyIncreaseUntilMinimumPlayers : Int -> List Player
-        slowlyIncreaseUntilMinimumPlayers howManyMatches =
-            let
-                filtered =
-                    List.filter (\player -> player.matches <= howManyMatches) players
-            in
-            case filtered of
-                _ :: _ :: _ ->
-                    filtered
-
-                _ ->
-                    slowlyIncreaseUntilMinimumPlayers (howManyMatches + 1)
-    in
-    players
-        |> List.map .matches
-        |> List.minimum
-        |> Maybe.withDefault 0
-        |> slowlyIncreaseUntilMinimumPlayers
 
 
 view : Model -> Document Msg
