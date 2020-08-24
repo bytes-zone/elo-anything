@@ -37,6 +37,7 @@ type alias Model =
 type Msg
     = KeeperUpdatedNewPlayerName String
     | KeeperWantsToAddNewPlayer
+    | KeeperWantsToRetirePlayer Player
     | StartMatchBetween ( Player, Player )
     | MatchFinished Player Elo.Outcome Player
     | KeeperWantsToSaveStandings
@@ -68,6 +69,25 @@ update msg model =
             ( { model
                 | players = Dict.insert model.newPlayerName (Player.init model.newPlayerName) model.players
                 , newPlayerName = ""
+              }
+            , Cmd.none
+            )
+                |> startNextMatchIfPossible
+
+        KeeperWantsToRetirePlayer player ->
+            ( { model
+                | players = Dict.remove player.name model.players
+                , currentMatch =
+                    case model.currentMatch of
+                        Nothing ->
+                            Nothing
+
+                        Just ( a, b ) ->
+                            if player == a || player == b then
+                                Nothing
+
+                            else
+                                Just ( a, b )
               }
             , Cmd.none
             )
@@ -326,7 +346,7 @@ percent chanceToWin =
     (toFloat (round (chanceToWin * 10000)) / 100 |> String.fromFloat) ++ "%"
 
 
-rankings : List Player -> Html msg
+rankings : List Player -> Html Msg
 rankings players =
     players
         |> List.sortBy (\player -> -player.rating)
@@ -338,6 +358,11 @@ rankings players =
                     , Html.td [] [ Html.text player.name ]
                     , Html.td [] [ Html.text (String.fromInt player.rating) ]
                     , Html.td [] [ Html.text (String.fromInt player.matches) ]
+                    , Html.td []
+                        [ Html.button
+                            [ Events.onClick (KeeperWantsToRetirePlayer player) ]
+                            [ Html.text "Retire" ]
+                        ]
                     ]
             )
         |> (::)
@@ -347,6 +372,7 @@ rankings players =
                 , Html.th [] [ Html.text "Name" ]
                 , Html.th [] [ Html.text "Rating" ]
                 , Html.th [] [ Html.text "Matches" ]
+                , Html.th [] [ Html.text "Actions" ]
                 ]
             )
         |> Html.table []
