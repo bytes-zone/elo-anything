@@ -49,7 +49,12 @@ type Msg
 
 init : Flags -> ( Model, Cmd Msg )
 init _ =
-    ( { players = Dict.empty
+    ( { players =
+            List.range 49 122
+                |> List.map Char.fromCode
+                |> List.map String.fromChar
+                |> List.map (\c -> ( c, Player c 1200 0 ))
+                |> Dict.fromList
       , currentMatch = Nothing
       , newPlayerName = ""
       }
