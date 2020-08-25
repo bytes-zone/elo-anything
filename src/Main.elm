@@ -310,87 +310,106 @@ currentMatch model =
             let
                 chanceAWins =
                     Elo.odds playerA.rating playerB.rating
-
-                chanceBWins =
-                    1 - chanceAWins
-
-                ( ratingAWins, _ ) =
-                    newRating playerA.rating Elo.WonAgainst playerB.rating
-
-                ( ratingBWins, _ ) =
-                    newRating playerB.rating Elo.WonAgainst playerA.rating
-
-                upsideA =
-                    ratingAWins - playerA.rating
-
-                upsideB =
-                    ratingBWins - playerB.rating
             in
             Html.section
-                [ css
-                    [ Css.maxWidth (Css.px 1024)
-                    , Css.margin2 Css.zero Css.auto
-                    ]
-                ]
+                [ css [ Css.width (Css.pct 80), Css.margin2 (Css.px 32) Css.auto ] ]
                 [ Html.div
-                    [ css [ Css.backgroundColor (Css.hex "#EEE"), Css.displayFlex ] ]
-                    [ Html.p
+                    [ css
+                        [ Css.borderRadius (Css.px 5)
+                        , Css.overflow Css.hidden
+                        , Css.height (Css.px 5)
+                        , Css.width (Css.pct 100)
+                        , Css.backgroundColor (Css.hex "EEE")
+                        ]
+                    ]
+                    [ Html.div
                         [ css
-                            [ Css.flexGrow (Css.num chanceAWins)
-                            , Css.paddingRight (Css.px 5)
-                            , Css.textAlign Css.right
-                            , Css.backgroundColor (Css.hex "#1E90FF")
-                            , Css.lineHeight (Css.px 50)
-                            , Css.margin Css.zero
+                            [ Css.width (Css.pct (100 * chanceAWins))
+                            , Css.height (Css.pct 100)
+                            , Css.backgroundColor (Css.hex "6DD400")
                             ]
                         ]
-                        [ Html.text (percent chanceAWins) ]
-                    , Html.p
-                        [ css
-                            [ Css.flexGrow (Css.num (1 - chanceAWins))
-                            , Css.paddingLeft (Css.px 5)
-                            , Css.lineHeight (Css.px 50)
-                            , Css.margin Css.zero
-                            ]
-                        ]
-                        [ Html.text (percent (1 - chanceAWins)) ]
+                        []
                     ]
                 , Html.div
                     [ css
                         [ Css.displayFlex
-                        , Css.justifyContent Css.spaceAround
-                        , Css.width (Css.pct 100)
+                        , Css.justifyContent Css.center
+                        , Css.paddingTop (Css.px 32)
                         ]
                     ]
-                    [ activePlayer chanceAWins playerA upsideA (MatchFinished playerA Elo.WonAgainst playerB)
-                    , Html.div []
-                        [ Html.p [] [ Html.text "vs." ]
-                        , Html.button [ Events.onClick (MatchFinished playerA Elo.DrewWith playerB) ] [ Html.text "It's a tie!" ]
+                    [ activePlayer playerA
+                    , Html.p
+                        [ css
+                            [ openSans
+                            , Css.flexGrow (Css.num 0.25)
+                            , Css.textAlign Css.center
+                            ]
                         ]
-                    , activePlayer (1 - chanceAWins) playerB upsideB (MatchFinished playerB Elo.WonAgainst playerA)
+                        [ Html.text "vs." ]
+                    , activePlayer playerB
+                    ]
+                , Html.div
+                    [ css
+                        [ Css.displayFlex
+                        , Css.paddingTop (Css.px 32)
+                        , Css.textAlign Css.center
+                        ]
+                    ]
+                    [ Html.div
+                        [ css [ Css.flexGrow (Css.int 1) ] ]
+                        [ blueButton "Winner!" (MatchFinished playerA Elo.WonAgainst playerB) ]
+                    , Html.div
+                        [ css [ Css.flexGrow (Css.num 0.25) ] ]
+                        [ blueButton "Tie!" (MatchFinished playerA Elo.DrewWith playerB)
+                        , Html.div [ css [ Css.height (Css.px 15) ] ] []
+                        , blueButton "Skip" (MatchFinished playerA Elo.DrewWith playerB)
+                        ]
+                    , Html.div
+                        [ css [ Css.flexGrow (Css.int 1) ] ]
+                        [ blueButton "Winner!" (MatchFinished playerB Elo.WonAgainst playerA) ]
                     ]
                 ]
 
 
-activePlayer : Float -> Player -> Int -> Msg -> Html Msg
-activePlayer chanceToWin player upside winMsg =
-    Html.div []
-        [ Html.h2 [] [ Html.text player.name ]
-        , Html.p []
-            [ Html.text (String.fromInt player.rating)
-            , Html.text " after "
-            , Html.text (String.fromInt player.matches)
-            , Html.text " matches."
+button : Css.Color -> String -> Msg -> Html Msg
+button baseColor label msg =
+    Html.button
+        [ css
+            [ Css.paddingTop (Css.px 10)
+            , Css.paddingBottom (Css.px 14)
+            , Css.width (Css.px 100)
+            , Css.backgroundColor baseColor
+            , Css.border Css.zero
+            , Css.borderRadius (Css.px 4)
+            , Css.boxShadow6 Css.inset Css.zero (Css.px -4) Css.zero Css.zero (Css.rgba 0 0 0 0.1)
+
+            -- font
+            , Css.fontSize (Css.px 14)
+            , Css.fontWeight (Css.int 600)
+            , Css.color (Css.hex "FFF")
             ]
-        , Html.p []
-            [ Html.text "Stands to gain "
-            , Html.text (String.fromInt upside)
-            , Html.text " points."
-            ]
-        , Html.button
-            [ Events.onClick winMsg ]
-            [ Html.text (player.name ++ " wins!") ]
+        , Events.onClick msg
         ]
+        [ Html.text label ]
+
+
+blueButton : String -> Msg -> Html Msg
+blueButton =
+    button (Css.hex "0091FF")
+
+
+activePlayer : Player -> Html msg
+activePlayer player =
+    Html.h2
+        [ css
+            [ Css.flexGrow (Css.int 1)
+            , Css.textAlign Css.center
+            , Css.fontSize (Css.px 24)
+            , openSans
+            ]
+        ]
+        [ Html.text player.name ]
 
 
 newRating : Int -> Elo.Outcome -> Int -> ( Int, Int )
