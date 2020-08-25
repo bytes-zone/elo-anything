@@ -399,6 +399,11 @@ greenButton =
     button (Css.hex "6DD400")
 
 
+redButton : String -> Msg -> Html Msg
+redButton =
+    button (Css.hex "E02020")
+
+
 activePlayer : Player -> Html msg
 activePlayer player =
     Html.h2
@@ -488,10 +493,7 @@ rankings model =
                         [ Html.text player.name ]
                     , Html.td
                         [ css [ textual, shrinkWidth, center ] ]
-                        [ Html.button
-                            [ Events.onClick (KeeperWantsToRetirePlayer player) ]
-                            [ Html.text "Retire" ]
-                        ]
+                        [ redButton "Retire" (KeeperWantsToRetirePlayer player) ]
                     ]
             )
         |> (::)
