@@ -296,8 +296,8 @@ currentMatch model =
                     ]
                     [ Html.text "Elo Anything" ]
                 , Html.p
-                    [ css [ Css.fontSize (Css.px 24) ] ]
-                    [ Html.text "No current match. To get started, add some players!" ]
+                    [ css [ Css.fontSize (Css.px 24), Css.lineHeight (Css.px 32) ] ]
+                    [ Html.text "No current match. To get started, add at least two players!" ]
                 ]
 
         Just ( playerA, playerB ) ->
@@ -433,6 +433,7 @@ rankings model =
             Css.batch
                 [ Css.fontWeight (Css.int 500)
                 , Css.fontSize (Css.px 18)
+                , Css.lineHeight (Css.px 24)
                 , Css.verticalAlign Css.middle
                 , openSans
                 , Css.paddingLeft (Css.px 15)
