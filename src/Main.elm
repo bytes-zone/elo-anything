@@ -153,10 +153,7 @@ update msg model =
                 |> startNextMatchIfPossible
 
         LoadedStandings (Err problem) ->
-            let
-                _ =
-                    Debug.log "problem" problem
-            in
+            -- TODO: show a problem
             ( model, Cmd.none )
 
 

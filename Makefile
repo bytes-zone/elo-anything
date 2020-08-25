@@ -5,4 +5,4 @@ dist: dist/index.html $(shell find static -type f)
 
 dist/index.html: $(shell find src -type f -name '*.elm') elm.json
 	@mkdir -p dist
-	elm make src/Main.elm --output $@
+	elm make src/Main.elm --optimize --output $@
