@@ -265,8 +265,7 @@ view model =
                     ]
                 ]
                 [ currentMatch model
-                , rankings (Dict.values model.players)
-                , newPlayerForm model
+                , rankings model
                 , Html.button [ Events.onClick KeeperWantsToSaveStandings ] [ Html.text "Save Standings" ]
                 , Html.button [ Events.onClick KeeperWantsToLoadStandings ] [ Html.text "Load Standings" ]
                 ]
@@ -372,8 +371,8 @@ button : Css.Color -> String -> Msg -> Html Msg
 button baseColor label msg =
     Html.button
         [ css
-            [ Css.paddingTop (Css.px 10)
-            , Css.paddingBottom (Css.px 14)
+            [ Css.paddingTop (Css.px 6)
+            , Css.paddingBottom (Css.px 10)
             , Css.width (Css.px 100)
             , Css.backgroundColor baseColor
             , Css.border Css.zero
@@ -395,6 +394,11 @@ blueButton =
     button (Css.hex "0091FF")
 
 
+greenButton : String -> Msg -> Html Msg
+greenButton =
+    button (Css.hex "6DD400")
+
+
 activePlayer : Player -> Html msg
 activePlayer player =
     Html.h2
@@ -414,13 +418,8 @@ newRating =
     Elo.newRating Elo.sensitiveKFactor
 
 
-percent : Float -> String
-percent chanceToWin =
-    (toFloat (round (chanceToWin * 10000)) / 100 |> String.fromFloat) ++ "%"
-
-
-rankings : List Player -> Html Msg
-rankings players =
+rankings : Model -> Html Msg
+rankings model =
     let
         numeric =
             Css.batch
@@ -467,7 +466,8 @@ rankings players =
                 , Css.lastChild [ Css.borderRightWidth Css.zero ]
                 ]
     in
-    players
+    model.players
+        |> Dict.values
         |> List.sortBy (\player -> -player.rating)
         |> List.indexedMap
             (\rank player ->
@@ -503,6 +503,51 @@ rankings players =
                 , Html.th [ css [ header, center ] ] [ Html.text "Actions" ]
                 ]
             )
+        |> (\tableGuts ->
+                tableGuts
+                    ++ [ Html.tr
+                            [ css [ Css.height (Css.px 60) ] ]
+                            [ Html.td
+                                [ css [ numeric, shrinkWidth, center, Css.color (Css.hex "A6A6A6") ] ]
+                                [ Html.text "-" ]
+                            , Html.td
+                                [ css [ numeric, shrinkWidth, center, Css.color (Css.hex "A6A6A6") ] ]
+                                [ Html.text (String.fromInt Elo.initialRating) ]
+                            , Html.td
+                                [ css [ numeric, shrinkWidth, center, Css.color (Css.hex "A6A6A6") ] ]
+                                [ Html.text "0" ]
+                            , Html.td
+                                [ css [ textual, left ] ]
+                                [ Html.inputText model.newPlayerName
+                                    [ Events.onInput KeeperUpdatedNewPlayerName
+                                    , Events.on "keydown"
+                                        (Decode.field "key" Decode.string
+                                            |> Decode.andThen
+                                                (\key ->
+                                                    case key of
+                                                        "Enter" ->
+                                                            Decode.succeed KeeperWantsToAddNewPlayer
+
+                                                        _ ->
+                                                            Decode.fail "ignoring"
+                                                )
+                                        )
+                                    , css
+                                        [ Css.border Css.zero
+                                        , Css.fontSize (Css.px 18)
+                                        , Css.padding2 (Css.px 5) (Css.px 15)
+                                        , Css.width (Css.calc (Css.pct 100) Css.minus (Css.px 15))
+                                        , Css.boxShadow6 Css.inset Css.zero (Css.px 1) (Css.px 2) Css.zero (Css.rgba 0 0 0 0.5)
+                                        , Css.borderRadius (Css.px 5)
+                                        ]
+                                    ]
+                                ]
+                            , Html.td
+                                [ css [ numeric, shrinkWidth, center ] ]
+                                [ greenButton "Add" KeeperWantsToAddNewPlayer ]
+                            ]
+                       ]
+           )
         |> Html.table
             [ css
                 [ Css.width (Css.pct 80)
@@ -510,18 +555,6 @@ rankings players =
                 , Css.borderCollapse Css.collapse
                 ]
             ]
-
-
-newPlayerForm : { whatever | newPlayerName : String } -> Html Msg
-newPlayerForm form =
-    WildWildHtml.form
-        [ Events.onSubmit KeeperWantsToAddNewPlayer ]
-        [ Html.labelBefore
-            []
-            (Html.text "Player Name:")
-            (Html.inputText form.newPlayerName [ Events.onInput KeeperUpdatedNewPlayerName ])
-        , Html.button [] [ Html.text "Add Player" ]
-        ]
 
 
 main : Program Flags Model Msg
