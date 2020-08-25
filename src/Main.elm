@@ -3,6 +3,7 @@ module Main exposing (..)
 import Accessibility.Styled as Html exposing (Html)
 import Browser exposing (Document)
 import Css
+import Css.Reset
 import Dict exposing (Dict)
 import Elo
 import File exposing (File)
@@ -236,15 +237,24 @@ view : Model -> Document Msg
 view model =
     { title = "ELO Anything!"
     , body =
-        [ Html.main_ []
-            [ rankings (Dict.values model.players)
-            , newPlayerForm model
-            , Html.button [ Events.onClick KeeperWantsToSaveStandings ] [ Html.text "Save Standings" ]
-            , Html.button [ Events.onClick KeeperWantsToLoadStandings ] [ Html.text "Load Standings" ]
-            , currentMatch model
+        [ Css.Reset.meyerV2
+        , Css.Reset.borderBoxV201408
+        , Html.div [ css [ Css.width (Css.pct 100) ] ]
+            [ Html.main_
+                [ css
+                    [ Css.maxWidth (Css.px 1024)
+                    , Css.margin2 Css.zero Css.auto
+                    ]
+                ]
+                [ rankings (Dict.values model.players)
+                , newPlayerForm model
+                , Html.button [ Events.onClick KeeperWantsToSaveStandings ] [ Html.text "Save Standings" ]
+                , Html.button [ Events.onClick KeeperWantsToLoadStandings ] [ Html.text "Load Standings" ]
+                , currentMatch model
+                ]
             ]
-            |> Html.toUnstyled
         ]
+            |> List.map Html.toUnstyled
     }
 
 
