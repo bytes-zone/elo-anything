@@ -1,4 +1,6 @@
-all: dist/index.html
+all: dist
+
+dist: dist/index.html
 
 dist/index.html: $(shell find src -type f -name '*.elm') elm.json
 	@mkdir -p dist
