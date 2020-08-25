@@ -266,8 +266,11 @@ view model =
                 ]
                 [ currentMatch model
                 , rankings model
-                , Html.button [ Events.onClick KeeperWantsToSaveStandings ] [ Html.text "Save Standings" ]
-                , Html.button [ Events.onClick KeeperWantsToLoadStandings ] [ Html.text "Load Standings" ]
+                , Html.section
+                    [ css [ Css.textAlign Css.center, Css.marginTop (Css.px 32) ] ]
+                    [ blueButton "Save Standings" KeeperWantsToSaveStandings
+                    , blueButton "Load Standings" KeeperWantsToLoadStandings
+                    ]
                 ]
             ]
         ]
@@ -296,8 +299,14 @@ currentMatch model =
                     ]
                     [ Html.text "Elo Anything" ]
                 , Html.p
-                    [ css [ Css.fontSize (Css.px 24), Css.lineHeight (Css.px 32) ] ]
+                    [ css
+                        [ Css.fontSize (Css.px 24)
+                        , Css.lineHeight (Css.px 32)
+                        , Css.marginBottom (Css.px 18)
+                        ]
+                    ]
                     [ Html.text "No current match. To get started, add at least two players!" ]
+                , blueButton "Load Standings" KeeperWantsToLoadStandings
                 ]
 
         Just ( playerA, playerB ) ->
@@ -373,7 +382,9 @@ button baseColor label msg =
         [ css
             [ Css.paddingTop (Css.px 6)
             , Css.paddingBottom (Css.px 10)
-            , Css.width (Css.px 100)
+            , Css.paddingLeft (Css.px 15)
+            , Css.paddingRight (Css.px 15)
+            , Css.minWidth (Css.px 100)
             , Css.backgroundColor baseColor
             , Css.border Css.zero
             , Css.borderRadius (Css.px 4)
