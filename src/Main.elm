@@ -312,7 +312,11 @@ currentMatch model =
                     Elo.odds playerA.rating playerB.rating
             in
             Html.section
-                [ css [ Css.width (Css.pct 80), Css.margin2 (Css.px 32) Css.auto ] ]
+                [ css
+                    [ Css.width (Css.pct 80)
+                    , Css.margin2 (Css.px 32) Css.auto
+                    ]
+                ]
                 [ Html.div
                     [ css
                         [ Css.borderRadius (Css.px 5)
@@ -334,7 +338,7 @@ currentMatch model =
                 , Html.div
                     [ css
                         [ Css.displayFlex
-                        , Css.justifyContent Css.center
+                        , Css.alignItems Css.center
                         , Css.paddingTop (Css.px 32)
                         ]
                     ]
@@ -342,7 +346,7 @@ currentMatch model =
                     , Html.p
                         [ css
                             [ openSans
-                            , Css.flexGrow (Css.num 0.25)
+                            , Css.flexGrow (Css.num 0.5)
                             , Css.textAlign Css.center
                             ]
                         ]
@@ -360,7 +364,7 @@ currentMatch model =
                         [ css [ Css.flexGrow (Css.int 1) ] ]
                         [ blueButton "Winner!" (MatchFinished playerA Elo.WonAgainst playerB) ]
                     , Html.div
-                        [ css [ Css.flexGrow (Css.num 0.25) ] ]
+                        [ css [ Css.flexGrow (Css.num 0.5) ] ]
                         [ blueButton "Tie!" (MatchFinished playerA Elo.DrewWith playerB)
                         , Html.div [ css [ Css.height (Css.px 15) ] ] []
                         , blueButton "Skip" (MatchFinished playerA Elo.DrewWith playerB)
@@ -404,6 +408,7 @@ activePlayer player =
     Html.h2
         [ css
             [ Css.flexGrow (Css.int 1)
+            , Css.maxWidth (Css.pct 45)
             , Css.textAlign Css.center
             , Css.fontSize (Css.px 24)
             , openSans
