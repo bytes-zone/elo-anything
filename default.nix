@@ -2,10 +2,11 @@
 let
   sources = import nix/sources.nix;
   nixpkgs = import sources.nixpkgs { };
+  gitignore = import sources.gitignore { };
 in with nixpkgs;
 stdenv.mkDerivation {
   name = "elo-anything";
-  src = ./.;
+  src = gitignore.gitignoreSource ./.;
 
   buildInputs = [ elmPackages.elm ];
   buildPhase = ''
