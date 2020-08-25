@@ -184,6 +184,11 @@ startNextMatchIfPossible ( model, cmd ) =
                 ( model, cmd )
 
 
+openSans : Css.Style
+openSans =
+    Css.fontFamilies [ "'Open Sans'", "sans-serif" ]
+
+
 {-| We need at least two players to guarantee that we return two distinct
 players.
 -}
@@ -239,6 +244,19 @@ view model =
     , body =
         [ Css.Reset.meyerV2
         , Css.Reset.borderBoxV201408
+        , WildWildHtml.node "style" [] [ Html.text """
+            @font-face {
+                font-family: "Open Sans";
+                src: url("/fonts/OpenSans-Regular-webfont.woff");
+                font-weight: 500;
+            }
+
+            @font-face {
+                font-family: "Open Sans";
+                src: url("/fonts/OpenSans-Semibold-webfont.woff");
+                font-weight: 600;
+            }
+          """ ]
         , Html.div [ css [ Css.width (Css.pct 100) ] ]
             [ Html.main_
                 [ css
@@ -366,9 +384,10 @@ rankings players =
     let
         numeric =
             Css.batch
-                [ Css.fontWeight (Css.int 700)
+                [ Css.fontWeight (Css.int 600)
                 , Css.fontSize (Css.px 21)
                 , Css.verticalAlign Css.middle
+                , openSans
                 ]
 
         textual =
@@ -376,11 +395,14 @@ rankings players =
                 [ Css.fontWeight (Css.int 500)
                 , Css.fontSize (Css.px 18)
                 , Css.verticalAlign Css.middle
+                , openSans
+                , Css.paddingLeft (Css.px 15)
                 ]
 
         shrinkWidth =
             Css.batch
-                [ Css.minWidth (Css.px 90)
+                [ Css.paddingLeft (Css.px 15)
+                , Css.paddingRight (Css.px 15)
                 , Css.width (Css.pct 1)
                 ]
 
@@ -389,6 +411,21 @@ rankings players =
 
         center =
             Css.textAlign Css.center
+
+        header =
+            Css.batch
+                [ Css.paddingRight (Css.px 15)
+                , Css.paddingLeft (Css.px 15)
+                , Css.verticalAlign Css.middle
+
+                -- font
+                , openSans
+                , Css.fontWeight (Css.int 600)
+
+                -- separators
+                , Css.borderRight3 (Css.px 1) Css.solid (Css.hex "B1BECE")
+                , Css.lastChild [ Css.borderRightWidth Css.zero ]
+                ]
     in
     players
         |> List.sortBy (\player -> -player.rating)
@@ -418,12 +455,12 @@ rankings players =
             )
         |> (::)
             (Html.tr
-                []
-                [ Html.th [ css [ center ] ] [ Html.text "Rank" ]
-                , Html.th [ css [ center ] ] [ Html.text "Rating" ]
-                , Html.th [ css [ center ] ] [ Html.text "Matches" ]
-                , Html.th [ css [ left ] ] [ Html.text "Name" ]
-                , Html.th [ css [ center ] ] [ Html.text "Actions" ]
+                [ css [ Css.height (Css.px 45) ] ]
+                [ Html.th [ css [ header, center ] ] [ Html.text "Rank" ]
+                , Html.th [ css [ header, center ] ] [ Html.text "Rating" ]
+                , Html.th [ css [ header, center ] ] [ Html.text "Matches" ]
+                , Html.th [ css [ header, left ] ] [ Html.text "Name" ]
+                , Html.th [ css [ header, center ] ] [ Html.text "Actions" ]
                 ]
             )
         |> Html.table
