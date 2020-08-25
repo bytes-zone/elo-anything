@@ -18,6 +18,7 @@ stdenv.mkDerivation {
     elmPackages.elm-test
 
     # Build Stuff
+    gnumake
     modd
     devd
   ];
