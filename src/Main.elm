@@ -269,11 +269,11 @@ view model =
                     , Css.margin2 Css.zero Css.auto
                     ]
                 ]
-                [ rankings (Dict.values model.players)
+                [ currentMatch model
+                , rankings (Dict.values model.players)
                 , newPlayerForm model
                 , Html.button [ Events.onClick KeeperWantsToSaveStandings ] [ Html.text "Save Standings" ]
                 , Html.button [ Events.onClick KeeperWantsToLoadStandings ] [ Html.text "Load Standings" ]
-                , currentMatch model
                 ]
             ]
         ]
