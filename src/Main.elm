@@ -284,6 +284,28 @@ view model =
 currentMatch : Model -> Html Msg
 currentMatch model =
     case model.currentMatch of
+        Nothing ->
+            Html.div
+                [ css
+                    [ openSans
+                    , Css.textAlign Css.center
+                    , Css.width (Css.pct 50)
+                    , Css.margin2 (Css.px 32) Css.auto
+                    ]
+                ]
+                [ Html.h1
+                    [ css
+                        [ Css.fontSize (Css.px 32)
+                        , Css.marginBottom (Css.px 18)
+                        , Css.fontWeight (Css.int 600)
+                        ]
+                    ]
+                    [ Html.text "Elo Anything" ]
+                , Html.p
+                    [ css [ Css.fontSize (Css.px 24) ] ]
+                    [ Html.text "No current match. To get started, add some players!" ]
+                ]
+
         Just ( playerA, playerB ) ->
             let
                 chanceAWins =
@@ -348,9 +370,6 @@ currentMatch model =
                     , activePlayer (1 - chanceAWins) playerB upsideB (MatchFinished playerB Elo.WonAgainst playerA)
                     ]
                 ]
-
-        Nothing ->
-            Html.text "no match right now... add some players, maybe?"
 
 
 activePlayer : Float -> Player -> Int -> Msg -> Html Msg
