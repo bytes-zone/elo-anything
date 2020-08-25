@@ -363,17 +363,53 @@ percent chanceToWin =
 
 rankings : List Player -> Html Msg
 rankings players =
+    let
+        numeric =
+            Css.batch
+                [ Css.fontWeight (Css.int 700)
+                , Css.fontSize (Css.px 21)
+                , Css.verticalAlign Css.middle
+                ]
+
+        textual =
+            Css.batch
+                [ Css.fontWeight (Css.int 500)
+                , Css.fontSize (Css.px 18)
+                , Css.verticalAlign Css.middle
+                ]
+
+        shrinkWidth =
+            Css.batch
+                [ Css.minWidth (Css.px 90)
+                , Css.width (Css.pct 1)
+                ]
+
+        left =
+            Css.textAlign Css.left
+
+        center =
+            Css.textAlign Css.center
+    in
     players
         |> List.sortBy (\player -> -player.rating)
         |> List.indexedMap
             (\rank player ->
                 Html.tr
-                    []
-                    [ Html.td [] [ Html.text (String.fromInt (rank + 1)) ]
-                    , Html.td [] [ Html.text player.name ]
-                    , Html.td [] [ Html.text (String.fromInt player.rating) ]
-                    , Html.td [] [ Html.text (String.fromInt player.matches) ]
-                    , Html.td []
+                    [ css [ Css.height (Css.px 60) ] ]
+                    [ Html.td
+                        [ css [ numeric, shrinkWidth, center ] ]
+                        [ Html.text (String.fromInt (rank + 1)) ]
+                    , Html.td
+                        [ css [ numeric, shrinkWidth, center ] ]
+                        [ Html.text (String.fromInt player.rating) ]
+                    , Html.td
+                        [ css [ numeric, shrinkWidth, center ] ]
+                        [ Html.text (String.fromInt player.matches) ]
+                    , Html.td
+                        [ css [ textual, left ] ]
+                        [ Html.text player.name ]
+                    , Html.td
+                        [ css [ textual, shrinkWidth, center ] ]
                         [ Html.button
                             [ Events.onClick (KeeperWantsToRetirePlayer player) ]
                             [ Html.text "Retire" ]
@@ -383,14 +419,20 @@ rankings players =
         |> (::)
             (Html.tr
                 []
-                [ Html.th [] [ Html.text "Rank" ]
-                , Html.th [] [ Html.text "Name" ]
-                , Html.th [] [ Html.text "Rating" ]
-                , Html.th [] [ Html.text "Matches" ]
-                , Html.th [] [ Html.text "Actions" ]
+                [ Html.th [ css [ center ] ] [ Html.text "Rank" ]
+                , Html.th [ css [ center ] ] [ Html.text "Rating" ]
+                , Html.th [ css [ center ] ] [ Html.text "Matches" ]
+                , Html.th [ css [ left ] ] [ Html.text "Name" ]
+                , Html.th [ css [ center ] ] [ Html.text "Actions" ]
                 ]
             )
-        |> Html.table []
+        |> Html.table
+            [ css
+                [ Css.width (Css.pct 80)
+                , Css.margin2 Css.zero Css.auto
+                , Css.borderCollapse Css.collapse
+                ]
+            ]
 
 
 newPlayerForm : { whatever | newPlayerName : String } -> Html Msg
