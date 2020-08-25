@@ -241,78 +241,83 @@ view model =
             , newPlayerForm model
             , Html.button [ Events.onClick KeeperWantsToSaveStandings ] [ Html.text "Save Standings" ]
             , Html.button [ Events.onClick KeeperWantsToLoadStandings ] [ Html.text "Load Standings" ]
-            , case model.currentMatch of
-                Just ( playerA, playerB ) ->
-                    let
-                        chanceAWins =
-                            Elo.odds playerA.rating playerB.rating
-
-                        chanceBWins =
-                            1 - chanceAWins
-
-                        ( ratingAWins, _ ) =
-                            newRating playerA.rating Elo.WonAgainst playerB.rating
-
-                        ( ratingBWins, _ ) =
-                            newRating playerB.rating Elo.WonAgainst playerA.rating
-
-                        upsideA =
-                            ratingAWins - playerA.rating
-
-                        upsideB =
-                            ratingBWins - playerB.rating
-                    in
-                    Html.section
-                        [ css
-                            [ Css.maxWidth (Css.px 1024)
-                            , Css.margin2 Css.zero Css.auto
-                            ]
-                        ]
-                        [ Html.div
-                            [ css [ Css.backgroundColor (Css.hex "#EEE"), Css.displayFlex ] ]
-                            [ Html.p
-                                [ css
-                                    [ Css.flexGrow (Css.num chanceAWins)
-                                    , Css.paddingRight (Css.px 5)
-                                    , Css.textAlign Css.right
-                                    , Css.backgroundColor (Css.hex "#1E90FF")
-                                    , Css.lineHeight (Css.px 50)
-                                    , Css.margin Css.zero
-                                    ]
-                                ]
-                                [ Html.text (percent chanceAWins) ]
-                            , Html.p
-                                [ css
-                                    [ Css.flexGrow (Css.num (1 - chanceAWins))
-                                    , Css.paddingLeft (Css.px 5)
-                                    , Css.lineHeight (Css.px 50)
-                                    , Css.margin Css.zero
-                                    ]
-                                ]
-                                [ Html.text (percent (1 - chanceAWins)) ]
-                            ]
-                        , Html.div
-                            [ css
-                                [ Css.displayFlex
-                                , Css.justifyContent Css.spaceAround
-                                , Css.width (Css.pct 100)
-                                ]
-                            ]
-                            [ activePlayer chanceAWins playerA upsideA (MatchFinished playerA Elo.WonAgainst playerB)
-                            , Html.div []
-                                [ Html.p [] [ Html.text "vs." ]
-                                , Html.button [ Events.onClick (MatchFinished playerA Elo.DrewWith playerB) ] [ Html.text "It's a tie!" ]
-                                ]
-                            , activePlayer (1 - chanceAWins) playerB upsideB (MatchFinished playerB Elo.WonAgainst playerA)
-                            ]
-                        ]
-
-                Nothing ->
-                    Html.text "no match right now... add some players, maybe?"
+            , currentMatch model
             ]
             |> Html.toUnstyled
         ]
     }
+
+
+currentMatch : Model -> Html Msg
+currentMatch model =
+    case model.currentMatch of
+        Just ( playerA, playerB ) ->
+            let
+                chanceAWins =
+                    Elo.odds playerA.rating playerB.rating
+
+                chanceBWins =
+                    1 - chanceAWins
+
+                ( ratingAWins, _ ) =
+                    newRating playerA.rating Elo.WonAgainst playerB.rating
+
+                ( ratingBWins, _ ) =
+                    newRating playerB.rating Elo.WonAgainst playerA.rating
+
+                upsideA =
+                    ratingAWins - playerA.rating
+
+                upsideB =
+                    ratingBWins - playerB.rating
+            in
+            Html.section
+                [ css
+                    [ Css.maxWidth (Css.px 1024)
+                    , Css.margin2 Css.zero Css.auto
+                    ]
+                ]
+                [ Html.div
+                    [ css [ Css.backgroundColor (Css.hex "#EEE"), Css.displayFlex ] ]
+                    [ Html.p
+                        [ css
+                            [ Css.flexGrow (Css.num chanceAWins)
+                            , Css.paddingRight (Css.px 5)
+                            , Css.textAlign Css.right
+                            , Css.backgroundColor (Css.hex "#1E90FF")
+                            , Css.lineHeight (Css.px 50)
+                            , Css.margin Css.zero
+                            ]
+                        ]
+                        [ Html.text (percent chanceAWins) ]
+                    , Html.p
+                        [ css
+                            [ Css.flexGrow (Css.num (1 - chanceAWins))
+                            , Css.paddingLeft (Css.px 5)
+                            , Css.lineHeight (Css.px 50)
+                            , Css.margin Css.zero
+                            ]
+                        ]
+                        [ Html.text (percent (1 - chanceAWins)) ]
+                    ]
+                , Html.div
+                    [ css
+                        [ Css.displayFlex
+                        , Css.justifyContent Css.spaceAround
+                        , Css.width (Css.pct 100)
+                        ]
+                    ]
+                    [ activePlayer chanceAWins playerA upsideA (MatchFinished playerA Elo.WonAgainst playerB)
+                    , Html.div []
+                        [ Html.p [] [ Html.text "vs." ]
+                        , Html.button [ Events.onClick (MatchFinished playerA Elo.DrewWith playerB) ] [ Html.text "It's a tie!" ]
+                        ]
+                    , activePlayer (1 - chanceAWins) playerB upsideB (MatchFinished playerB Elo.WonAgainst playerA)
+                    ]
+                ]
+
+        Nothing ->
+            Html.text "no match right now... add some players, maybe?"
 
 
 activePlayer : Float -> Player -> Int -> Msg -> Html Msg
