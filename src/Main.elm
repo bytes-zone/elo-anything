@@ -365,10 +365,7 @@ currentMatch model =
                         [ blueButton "Winner!" (MatchFinished playerA Elo.WonAgainst playerB) ]
                     , Html.div
                         [ css [ Css.flexGrow (Css.num 0.5) ] ]
-                        [ blueButton "Tie!" (MatchFinished playerA Elo.DrewWith playerB)
-                        , Html.div [ css [ Css.height (Css.px 15) ] ] []
-                        , blueButton "Skip" (MatchFinished playerA Elo.DrewWith playerB)
-                        ]
+                        [ blueButton "Tie!" (MatchFinished playerA Elo.DrewWith playerB) ]
                     , Html.div
                         [ css [ Css.flexGrow (Css.int 1) ] ]
                         [ blueButton "Winner!" (MatchFinished playerB Elo.WonAgainst playerA) ]
