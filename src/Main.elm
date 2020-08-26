@@ -346,7 +346,7 @@ currentMatch model =
                     , Html.p
                         [ css
                             [ openSans
-                            , Css.flexGrow (Css.num 0.5)
+                            , Css.width (Css.pct 20)
                             , Css.textAlign Css.center
                             ]
                         ]
@@ -361,13 +361,13 @@ currentMatch model =
                         ]
                     ]
                     [ Html.div
-                        [ css [ Css.flexGrow (Css.int 1) ] ]
+                        [ css [ Css.width (Css.pct 40) ] ]
                         [ blueButton "Winner!" (MatchFinished playerA Elo.WonAgainst playerB) ]
                     , Html.div
-                        [ css [ Css.flexGrow (Css.num 0.5) ] ]
+                        [ css [ Css.width (Css.pct 20) ] ]
                         [ blueButton "Tie!" (MatchFinished playerA Elo.DrewWith playerB) ]
                     , Html.div
-                        [ css [ Css.flexGrow (Css.int 1) ] ]
+                        [ css [ Css.width (Css.pct 40) ] ]
                         [ blueButton "Winner!" (MatchFinished playerB Elo.WonAgainst playerA) ]
                     ]
                 ]
@@ -417,7 +417,7 @@ activePlayer : Player -> Html msg
 activePlayer player =
     Html.h2
         [ css
-            [ Css.flexGrow (Css.int 1)
+            [ Css.width (Css.pct 40)
             , Css.maxWidth (Css.pct 45)
             , Css.textAlign Css.center
             , Css.fontSize (Css.px 24)
