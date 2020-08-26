@@ -386,6 +386,7 @@ button baseColor label msg =
             , Css.border Css.zero
             , Css.borderRadius (Css.px 4)
             , Css.boxShadow6 Css.inset Css.zero (Css.px -4) Css.zero Css.zero (Css.rgba 0 0 0 0.1)
+            , Css.cursor Css.pointer
 
             -- font
             , Css.fontSize (Css.px 14)
