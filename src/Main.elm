@@ -26,6 +26,7 @@ type alias Flags =
 
 type alias Model =
     { players : Dict String Player
+    , playersBeforeLastMatch : Dict String Player
 
     -- view state: what match are we playing now?
     , currentMatch : Maybe ( Player, Player )
@@ -50,6 +51,7 @@ type Msg
 init : Flags -> ( Model, Cmd Msg )
 init _ =
     ( { players = Dict.empty
+      , playersBeforeLastMatch = Dict.empty
       , currentMatch = Nothing
       , newPlayerName = ""
       }
@@ -69,6 +71,7 @@ update msg model =
         KeeperWantsToAddNewPlayer ->
             ( { model
                 | players = Dict.insert model.newPlayerName (Player.init model.newPlayerName) model.players
+                , playersBeforeLastMatch = Dict.insert model.newPlayerName (Player.init model.newPlayerName) model.players
                 , newPlayerName = ""
               }
             , Cmd.none
@@ -78,6 +81,7 @@ update msg model =
         KeeperWantsToRetirePlayer player ->
             ( { model
                 | players = Dict.remove player.name model.players
+                , playersBeforeLastMatch = Dict.remove player.name model.playersBeforeLastMatch
                 , currentMatch =
                     case model.currentMatch of
                         Nothing ->
@@ -109,6 +113,7 @@ update msg model =
                     model.players
                         |> Dict.update playerA.name (Maybe.map (Player.incrementMatchesPlayed >> Player.setRating playerARating))
                         |> Dict.update playerB.name (Maybe.map (Player.incrementMatchesPlayed >> Player.setRating playerBRating))
+                , playersBeforeLastMatch = model.players
                 , currentMatch = Nothing
               }
             , Cmd.none
@@ -146,6 +151,7 @@ update msg model =
         LoadedStandings (Ok players) ->
             ( { model
                 | players = players
+                , playersBeforeLastMatch = players
                 , currentMatch = Nothing
               }
             , Cmd.none
@@ -435,6 +441,13 @@ newRating =
 rankings : Model -> Html Msg
 rankings model =
     let
+        previousStandings =
+            model.playersBeforeLastMatch
+                |> Dict.values
+                |> List.sortBy (\player -> -player.rating)
+                |> List.indexedMap (\rank player -> ( player.name, rank ))
+                |> Dict.fromList
+
         numeric =
             Css.batch
                 [ Css.fontWeight (Css.int 600)
@@ -486,11 +499,25 @@ rankings model =
         |> List.sortBy (\player -> -player.rating)
         |> List.indexedMap
             (\rank player ->
+                let
+                    previousRank =
+                        Dict.get player.name previousStandings
+                            |> Maybe.withDefault rank
+                in
                 Html.tr
                     [ css [ Css.height (Css.px 60) ] ]
                     [ Html.td
                         [ css [ numeric, shrinkWidth, center ] ]
-                        [ Html.text (String.fromInt (rank + 1)) ]
+                        [ if rank < previousRank then
+                            upArrow (Css.hex "6DD400")
+
+                          else if rank > previousRank then
+                            downArrow (Css.hex "E02020")
+
+                          else
+                            Html.text ""
+                        , Html.text (String.fromInt (rank + 1))
+                        ]
                     , Html.td
                         [ css [ numeric, shrinkWidth, center ] ]
                         [ Html.text (String.fromInt player.rating) ]
@@ -567,6 +594,38 @@ rankings model =
                 , Css.borderCollapse Css.collapse
                 ]
             ]
+
+
+upArrow : Css.Color -> Html msg
+upArrow color =
+    Html.div
+        [ css
+            [ Css.width Css.zero
+            , Css.height Css.zero
+            , Css.borderLeft3 (Css.px 5) Css.solid Css.transparent
+            , Css.borderRight3 (Css.px 5) Css.solid Css.transparent
+            , Css.borderBottom3 (Css.px 10) Css.solid color
+            , Css.display Css.inlineBlock
+            , Css.margin4 (Css.px 2) (Css.px 5) (Css.px 2) (Css.px 2)
+            ]
+        ]
+        []
+
+
+downArrow : Css.Color -> Html msg
+downArrow color =
+    Html.div
+        [ css
+            [ Css.width Css.zero
+            , Css.height Css.zero
+            , Css.borderLeft3 (Css.px 5) Css.solid Css.transparent
+            , Css.borderRight3 (Css.px 5) Css.solid Css.transparent
+            , Css.borderTop3 (Css.px 10) Css.solid color
+            , Css.display Css.inlineBlock
+            , Css.margin4 (Css.px 2) (Css.px 5) (Css.px 2) (Css.px 2)
+            ]
+        ]
+        []
 
 
 main : Program Flags Model Msg
