@@ -8,9 +8,14 @@ stdenv.mkDerivation {
   name = "elo-anything";
   src = gitignore.gitignoreSource ./.;
 
-  buildInputs = [ elmPackages.elm ];
+  buildInputs = [ elmPackages.elm elmPackages.elm-test ];
   buildPhase = ''
     env ELM_HOME=.elm make dist
+  '';
+
+  doCheck = true;
+  checkPhase = ''
+    env ELM_HOME=.elm elm-test
   '';
 
   installPhase = ''
