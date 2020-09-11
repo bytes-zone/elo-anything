@@ -12,6 +12,7 @@ import File.Select as Select
 import Html.Styled as WildWildHtml
 import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
+import Html.Styled.Keyed as Keyed
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (encode)
 import Keyboard
@@ -534,7 +535,8 @@ rankings model =
                         Dict.get player.name previousStandings
                             |> Maybe.withDefault rank
                 in
-                Html.tr
+                ( player.name
+                , Html.tr
                     [ css [ Css.height (Css.px 60) ] ]
                     [ Html.td
                         [ css
@@ -585,9 +587,11 @@ rankings model =
                         [ css [ textual, shrinkWidth, center ] ]
                         [ redButton "Retire" (KeeperWantsToRetirePlayer player) ]
                     ]
+                )
             )
         |> (::)
-            (Html.tr
+            ( "players-header"
+            , Html.tr
                 [ css [ Css.height (Css.px 45) ] ]
                 [ Html.th [ css [ Css.width (Css.px 20) ] ] []
                 , Html.th [ css [ header, center ] ] [ Html.text "Rank" ]
@@ -599,7 +603,8 @@ rankings model =
             )
         |> (\tableGuts ->
                 tableGuts
-                    ++ [ Html.tr
+                    ++ [ ( "add-player-form"
+                         , Html.tr
                             [ css [ Css.height (Css.px 60) ] ]
                             [ Html.td [] []
                             , Html.td
@@ -641,9 +646,10 @@ rankings model =
                                 [ css [ numeric, shrinkWidth, center ] ]
                                 [ greenButton "Add" KeeperWantsToAddNewPlayer ]
                             ]
+                         )
                        ]
            )
-        |> Html.table
+        |> Keyed.node "table"
             [ css
                 [ Css.width (Css.pct 80)
                 , Css.margin2 Css.zero Css.auto
