@@ -508,17 +508,41 @@ rankings model =
                 Html.tr
                     [ css [ Css.height (Css.px 60) ] ]
                     [ Html.td
-                        [ css [ numeric, shrinkWidth, center ] ]
-                        [ if rank < previousRank then
-                            upArrow (Css.hex "6DD400")
-
-                          else if rank > previousRank then
-                            downArrow (Css.hex "E02020")
-
-                          else
-                            Html.text ""
-                        , Html.text (String.fromInt (rank + 1))
+                        [ css
+                            [ Css.verticalAlign Css.middle
+                            , Css.textAlign Css.center
+                            ]
                         ]
+                        (if rank < previousRank then
+                            [ upArrow (Css.hex "6DD400")
+                            , Html.span
+                                [ css
+                                    [ openSans
+                                    , Css.color (Css.hex "6DD400")
+                                    , Css.fontSize (Css.px 14)
+                                    ]
+                                ]
+                                [ Html.text (String.fromInt (previousRank - rank)) ]
+                            ]
+
+                         else if rank > previousRank then
+                            [ downArrow (Css.hex "E02020")
+                            , Html.span
+                                [ css
+                                    [ openSans
+                                    , Css.color (Css.hex "E02020")
+                                    , Css.fontSize (Css.px 14)
+                                    ]
+                                ]
+                                [ Html.text (String.fromInt (abs (previousRank - rank))) ]
+                            ]
+
+                         else
+                            [ Html.text "" ]
+                        )
+                    , Html.td
+                        [ css [ numeric, shrinkWidth, center ] ]
+                        [ Html.text (String.fromInt (rank + 1)) ]
                     , Html.td
                         [ css [ numeric, shrinkWidth, center ] ]
                         [ Html.text (String.fromInt player.rating) ]
@@ -536,7 +560,8 @@ rankings model =
         |> (::)
             (Html.tr
                 [ css [ Css.height (Css.px 45) ] ]
-                [ Html.th [ css [ header, center ] ] [ Html.text "Rank" ]
+                [ Html.th [ css [ Css.width (Css.px 20) ] ] []
+                , Html.th [ css [ header, center ] ] [ Html.text "Rank" ]
                 , Html.th [ css [ header, center ] ] [ Html.text "Rating" ]
                 , Html.th [ css [ header, center ] ] [ Html.text "Matches" ]
                 , Html.th [ css [ header, left ] ] [ Html.text "Name" ]
@@ -547,7 +572,8 @@ rankings model =
                 tableGuts
                     ++ [ Html.tr
                             [ css [ Css.height (Css.px 60) ] ]
-                            [ Html.td
+                            [ Html.td [] []
+                            , Html.td
                                 [ css [ numeric, shrinkWidth, center, Css.color (Css.hex "A6A6A6") ] ]
                                 [ Html.text "-" ]
                             , Html.td
