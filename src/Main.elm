@@ -14,6 +14,7 @@ import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (encode)
+import League exposing (League)
 import List.Extra
 import Player exposing (Player)
 import Random exposing (Generator)
@@ -25,8 +26,8 @@ type alias Flags =
 
 
 type alias Model =
-    { players : Dict String Player
-    , playersBeforeLastMatch : Dict String Player
+    { league : League
+    , leagueBeforeLastMatch : League
 
     -- view state: what match are we playing now?
     , currentMatch : Maybe ( Player, Player )
@@ -45,13 +46,13 @@ type Msg
     | KeeperWantsToSaveStandings
     | KeeperWantsToLoadStandings
     | SelectedStandingsFile File
-    | LoadedStandings (Result String (Dict String Player))
+    | LoadedLeague (Result String League)
 
 
 init : Flags -> ( Model, Cmd Msg )
 init _ =
-    ( { players = Dict.empty
-      , playersBeforeLastMatch = Dict.empty
+    ( { league = League.init
+      , leagueBeforeLastMatch = League.init
       , currentMatch = Nothing
       , newPlayerName = ""
       }
@@ -70,8 +71,8 @@ update msg model =
 
         KeeperWantsToAddNewPlayer ->
             ( { model
-                | players = Dict.insert model.newPlayerName (Player.init model.newPlayerName) model.players
-                , playersBeforeLastMatch = Dict.insert model.newPlayerName (Player.init model.newPlayerName) model.players
+                | league = League.addNewPlayer (Player.init model.newPlayerName) model.league
+                , leagueBeforeLastMatch = League.addNewPlayer (Player.init model.newPlayerName) model.leagueBeforeLastMatch
                 , newPlayerName = ""
               }
             , Cmd.none
@@ -80,8 +81,8 @@ update msg model =
 
         KeeperWantsToRetirePlayer player ->
             ( { model
-                | players = Dict.remove player.name model.players
-                , playersBeforeLastMatch = Dict.remove player.name model.playersBeforeLastMatch
+                | league = League.retirePlayer player model.league
+                , leagueBeforeLastMatch = League.retirePlayer player model.leagueBeforeLastMatch
                 , currentMatch =
                     case model.currentMatch of
                         Nothing ->
@@ -109,11 +110,11 @@ update msg model =
                     newRating playerA.rating outcome playerB.rating
             in
             ( { model
-                | players =
-                    model.players
-                        |> Dict.update playerA.name (Maybe.map (Player.incrementMatchesPlayed >> Player.setRating playerARating))
-                        |> Dict.update playerB.name (Maybe.map (Player.incrementMatchesPlayed >> Player.setRating playerBRating))
-                , playersBeforeLastMatch = model.players
+                | league =
+                    model.league
+                        |> League.updatePlayer (Player.incrementMatchesPlayed (Player.setRating playerARating playerA))
+                        |> League.updatePlayer (Player.incrementMatchesPlayed (Player.setRating playerBRating playerB))
+                , leagueBeforeLastMatch = model.league
                 , currentMatch = Nothing
               }
             , Cmd.none
@@ -125,7 +126,7 @@ update msg model =
             , Download.string
                 "standings.json"
                 "application/json"
-                (encode 2 (Encode.dict identity Player.encode model.players))
+                (encode 2 (League.encode model.league))
             )
 
         KeeperWantsToLoadStandings ->
@@ -138,27 +139,27 @@ update msg model =
             , File.toString file
                 |> Task.andThen
                     (\jsonString ->
-                        case Decode.decodeString (Decode.dict Player.decoder) jsonString of
+                        case Decode.decodeString League.decoder jsonString of
                             Ok decoded ->
                                 Task.succeed decoded
 
                             Err err ->
                                 Task.fail (Decode.errorToString err)
                     )
-                |> Task.attempt LoadedStandings
+                |> Task.attempt LoadedLeague
             )
 
-        LoadedStandings (Ok players) ->
+        LoadedLeague (Ok league) ->
             ( { model
-                | players = players
-                , playersBeforeLastMatch = players
+                | league = league
+                , leagueBeforeLastMatch = league
                 , currentMatch = Nothing
               }
             , Cmd.none
             )
                 |> startNextMatchIfPossible
 
-        LoadedStandings (Err problem) ->
+        LoadedLeague (Err problem) ->
             -- TODO: show a problem
             ( model, Cmd.none )
 
@@ -172,7 +173,7 @@ startNextMatchIfPossible ( model, cmd ) =
     else
         let
             players =
-                Dict.values model.players
+                Dict.values model.league.players
         in
         case players of
             first :: next :: rest ->
@@ -442,7 +443,7 @@ rankings : Model -> Html Msg
 rankings model =
     let
         previousStandings =
-            model.playersBeforeLastMatch
+            model.leagueBeforeLastMatch.players
                 |> Dict.values
                 |> List.sortBy (\player -> -player.rating)
                 |> List.indexedMap (\rank player -> ( player.name, rank ))
@@ -494,7 +495,7 @@ rankings model =
                 , Css.lastChild [ Css.borderRightWidth Css.zero ]
                 ]
     in
-    model.players
+    model.league.players
         |> Dict.values
         |> List.sortBy (\player -> -player.rating)
         |> List.indexedMap
