@@ -10,6 +10,11 @@
         version = "1.1.3";
       };
 
+      "ohanhi/keyboard" = {
+        sha256 = "10sbq8v2kydnc3lkydl367g36q2b0xizxl031xyakrgl4zlh07ic";
+        version = "2.0.1";
+      };
+
       "elm/html" = {
         sha256 = "1n3gpzmpqqdsldys4ipgyl1zacn0kbpc3g4v3hdpiyfjlgh8bf3k";
         version = "1.0.0";
