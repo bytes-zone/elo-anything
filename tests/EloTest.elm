@@ -60,4 +60,17 @@ newRating =
                         Elo.newRating Elo.sensitiveKFactor player WonAgainst favorite
                 in
                 newAgainstEqual |> Expect.lessThan newAgainstFavorite
+        , fuzz2 ratingFuzzer (Fuzz.intRange 1 32) "a higher k-value produces a larger score difference than a lower one" <|
+            \player kFactorIncrease ->
+                let
+                    opponent =
+                        player + 100
+
+                    ( newWithLowKFactor, _ ) =
+                        Elo.newRating Elo.sensitiveKFactor player WonAgainst opponent
+
+                    ( newWithHighKFactor, _ ) =
+                        Elo.newRating (Elo.sensitiveKFactor + kFactorIncrease) player WonAgainst opponent
+                in
+                newWithLowKFactor |> Expect.lessThan newWithHighKFactor
         ]
