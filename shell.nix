@@ -16,6 +16,7 @@ stdenv.mkDerivation {
     elmPackages.elm
     elmPackages.elm-format
     elmPackages.elm-test
+    elm2nix
 
     # Build Stuff
     gnumake
