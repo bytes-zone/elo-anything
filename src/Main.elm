@@ -14,6 +14,7 @@ import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (encode)
+import Keyboard
 import League exposing (League)
 import List.Extra
 import Player exposing (Player)
@@ -47,6 +48,7 @@ type Msg
     | KeeperWantsToLoadStandings
     | SelectedStandingsFile File
     | LoadedLeague (Result String League)
+    | IgnoredKey
 
 
 init : Flags -> ( Model, Cmd Msg )
@@ -162,6 +164,33 @@ update msg model =
         LoadedLeague (Err problem) ->
             -- TODO: show a problem
             ( model, Cmd.none )
+
+        IgnoredKey ->
+            ( model, Cmd.none )
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model.currentMatch of
+        Just ( left, right ) ->
+            Keyboard.downs
+                (\rawKey ->
+                    case Keyboard.navigationKey rawKey of
+                        Just Keyboard.ArrowLeft ->
+                            MatchFinished left Elo.WonAgainst right
+
+                        Just Keyboard.ArrowRight ->
+                            MatchFinished right Elo.WonAgainst left
+
+                        Just Keyboard.ArrowDown ->
+                            MatchFinished left Elo.DrewWith right
+
+                        _ ->
+                            IgnoredKey
+                )
+
+        Nothing ->
+            Sub.none
 
 
 startNextMatchIfPossible : ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
@@ -661,5 +690,5 @@ main =
         { init = init
         , update = update
         , view = view
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         }
