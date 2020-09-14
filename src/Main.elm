@@ -400,8 +400,8 @@ rankings : Model -> Html Msg
 rankings model =
     let
         previousStandings =
-            model.leagueBeforeLastMatch.players
-                |> Dict.values
+            model.leagueBeforeLastMatch
+                |> League.players
                 |> List.sortBy (\player -> -player.rating)
                 |> List.indexedMap (\rank player -> ( player.name, rank ))
                 |> Dict.fromList
@@ -452,8 +452,8 @@ rankings model =
                 , Css.lastChild [ Css.borderRightWidth Css.zero ]
                 ]
     in
-    model.league.players
-        |> Dict.values
+    model.league
+        |> League.players
         |> List.sortBy (\player -> -player.rating)
         |> List.indexedMap
             (\rank player ->

@@ -1,4 +1,4 @@
-module League exposing (League, Match(..), addNewPlayer, currentMatch, decoder, encode, finishMatch, init, nextMatch, retirePlayer, startMatch, updatePlayer)
+module League exposing (League, Match(..), addNewPlayer, currentMatch, decoder, encode, finishMatch, init, nextMatch, players, retirePlayer, startMatch, updatePlayer)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
@@ -8,10 +8,11 @@ import Player exposing (Player)
 import Random exposing (Generator)
 
 
-type alias League =
-    { players : Dict String Player
-    , currentMatch : Maybe Match
-    }
+type League
+    = League
+        { players : Dict String Player
+        , currentMatch : Maybe Match
+        }
 
 
 type Match
@@ -20,32 +21,39 @@ type Match
 
 init : League
 init =
-    { players = Dict.empty
-    , currentMatch = Nothing
-    }
+    League
+        { players = Dict.empty
+        , currentMatch = Nothing
+        }
+
+
+players : League -> List Player
+players (League league) =
+    Dict.values league.players
 
 
 addNewPlayer : Player -> League -> League
-addNewPlayer player league =
-    { league | players = Dict.insert player.name player league.players }
+addNewPlayer player (League league) =
+    League { league | players = Dict.insert player.name player league.players }
 
 
 retirePlayer : Player -> League -> League
-retirePlayer player league =
-    { league
-        | players = Dict.remove player.name league.players
-        , currentMatch =
-            case league.currentMatch of
-                Nothing ->
-                    Nothing
-
-                Just (MatchBetween a b) ->
-                    if player.name == a.name || player.name == b.name then
+retirePlayer player (League league) =
+    League
+        { league
+            | players = Dict.remove player.name league.players
+            , currentMatch =
+                case league.currentMatch of
+                    Nothing ->
                         Nothing
 
-                    else
-                        league.currentMatch
-    }
+                    Just (MatchBetween a b) ->
+                        if player.name == a.name || player.name == b.name then
+                            Nothing
+
+                        else
+                            league.currentMatch
+        }
 
 
 updatePlayer : Player -> League -> League
@@ -54,24 +62,24 @@ updatePlayer =
 
 
 startMatch : Match -> League -> League
-startMatch match league =
-    { league | currentMatch = Just match }
+startMatch match (League league) =
+    League { league | currentMatch = Just match }
 
 
 finishMatch : League -> League
-finishMatch league =
-    { league | currentMatch = Nothing }
+finishMatch (League league) =
+    League { league | currentMatch = Nothing }
 
 
 currentMatch : League -> Maybe Match
-currentMatch league =
+currentMatch (League league) =
     league.currentMatch
 
 
 decoder : Decoder League
 decoder =
     Decode.map
-        (\players -> League players Nothing)
+        (\newPlayers -> League { players = newPlayers, currentMatch = Nothing })
         (Decode.oneOf
             [ Decode.field "players" (Decode.list Player.decoder)
                 |> Decode.map (List.map (\player -> ( player.name, player )))
@@ -83,7 +91,7 @@ decoder =
 
 
 encode : League -> Encode.Value
-encode league =
+encode (League league) =
     Encode.object
         [ ( "players", Encode.list Player.encode (Dict.values league.players) ) ]
 
@@ -92,7 +100,7 @@ encode league =
 players.
 -}
 nextMatch : League -> Generator (Maybe Match)
-nextMatch league =
+nextMatch (League league) =
     let
         allPlayers =
             Dict.values league.players
