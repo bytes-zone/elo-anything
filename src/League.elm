@@ -1,4 +1,4 @@
-module League exposing (League, addNewPlayer, decoder, encode, init, match, retirePlayer, updatePlayer)
+module League exposing (League, Match(..), addNewPlayer, currentMatch, decoder, encode, finishMatch, init, nextMatch, retirePlayer, startMatch, updatePlayer)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
@@ -10,12 +10,19 @@ import Random exposing (Generator)
 
 type alias League =
     { players : Dict String Player
+    , currentMatch : Maybe Match
     }
+
+
+type Match
+    = MatchBetween Player Player
 
 
 init : League
 init =
-    { players = Dict.empty }
+    { players = Dict.empty
+    , currentMatch = Nothing
+    }
 
 
 addNewPlayer : Player -> League -> League
@@ -25,7 +32,20 @@ addNewPlayer player league =
 
 retirePlayer : Player -> League -> League
 retirePlayer player league =
-    { league | players = Dict.remove player.name league.players }
+    { league
+        | players = Dict.remove player.name league.players
+        , currentMatch =
+            case league.currentMatch of
+                Nothing ->
+                    Nothing
+
+                Just (MatchBetween a b) ->
+                    if player.name == a.name || player.name == b.name then
+                        Nothing
+
+                    else
+                        league.currentMatch
+    }
 
 
 updatePlayer : Player -> League -> League
@@ -33,16 +53,33 @@ updatePlayer =
     addNewPlayer
 
 
+startMatch : Match -> League -> League
+startMatch match league =
+    { league | currentMatch = Just match }
+
+
+finishMatch : League -> League
+finishMatch league =
+    { league | currentMatch = Nothing }
+
+
+currentMatch : League -> Maybe Match
+currentMatch league =
+    league.currentMatch
+
+
 decoder : Decoder League
 decoder =
-    Decode.oneOf
-        [ Decode.field "players" (Decode.list Player.decoder)
-            |> Decode.map (List.map (\player -> ( player.name, player )))
-            |> Decode.map Dict.fromList
-            |> Decode.map League
-        , -- old formats
-          Decode.map League (Decode.dict Player.decoder)
-        ]
+    Decode.map
+        (\players -> League players Nothing)
+        (Decode.oneOf
+            [ Decode.field "players" (Decode.list Player.decoder)
+                |> Decode.map (List.map (\player -> ( player.name, player )))
+                |> Decode.map Dict.fromList
+            , -- old formats
+              Decode.dict Player.decoder
+            ]
+        )
 
 
 encode : League -> Encode.Value
@@ -54,8 +91,8 @@ encode league =
 {-| We need at least two players to guarantee that we return two distinct
 players.
 -}
-match : League -> Generator (Maybe ( Player, Player ))
-match league =
+nextMatch : League -> Generator (Maybe Match)
+nextMatch league =
     let
         allPlayers =
             Dict.values league.players
@@ -94,13 +131,14 @@ match league =
                         case weights of
                             firstWeight :: restOfWeights ->
                                 Random.weighted firstWeight restOfWeights
-                                    |> Random.map Just
 
                             _ ->
                                 -- how did we get here? Unless... a and b were the same
                                 -- player? Sneaky caller!
-                                Random.constant (Just ( a, b ))
+                                Random.constant ( a, b )
                    )
+                |> Random.map (\( left, right ) -> MatchBetween left right)
+                |> Random.map Just
 
         _ ->
             Random.constant Nothing

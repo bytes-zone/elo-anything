@@ -30,9 +30,6 @@ type alias Model =
     { league : League
     , leagueBeforeLastMatch : League
 
-    -- view state: what match are we playing now?
-    , currentMatch : Maybe ( Player, Player )
-
     -- view state: new player form
     , newPlayerName : String
     }
@@ -42,7 +39,7 @@ type Msg
     = KeeperUpdatedNewPlayerName String
     | KeeperWantsToAddNewPlayer
     | KeeperWantsToRetirePlayer Player
-    | StartMatch (Maybe ( Player, Player ))
+    | GotNextMatch (Maybe League.Match)
     | MatchFinished Player Elo.Outcome Player
     | KeeperWantsToSaveStandings
     | KeeperWantsToLoadStandings
@@ -55,7 +52,6 @@ init : Flags -> ( Model, Cmd Msg )
 init _ =
     ( { league = League.init
       , leagueBeforeLastMatch = League.init
-      , currentMatch = Nothing
       , newPlayerName = ""
       }
     , Cmd.none
@@ -84,29 +80,17 @@ update msg model =
         KeeperWantsToRetirePlayer player ->
             ( { model
                 | league = League.retirePlayer player model.league
-                , leagueBeforeLastMatch = League.retirePlayer player model.leagueBeforeLastMatch
-                , currentMatch =
-                    case model.currentMatch of
-                        Nothing ->
-                            Nothing
-
-                        Just ( a, b ) ->
-                            if player == a || player == b then
-                                Nothing
-
-                            else
-                                Just ( a, b )
               }
             , Cmd.none
             )
                 |> startNextMatchIfPossible
 
-        StartMatch (Just match) ->
-            ( { model | currentMatch = Just match }
+        GotNextMatch (Just match) ->
+            ( { model | league = League.startMatch match model.league }
             , Cmd.none
             )
 
-        StartMatch Nothing ->
+        GotNextMatch Nothing ->
             ( model, Cmd.none )
 
         MatchFinished playerA outcome playerB ->
@@ -119,8 +103,8 @@ update msg model =
                     model.league
                         |> League.updatePlayer (Player.incrementMatchesPlayed (Player.setRating playerARating playerA))
                         |> League.updatePlayer (Player.incrementMatchesPlayed (Player.setRating playerBRating playerB))
+                        |> League.finishMatch
                 , leagueBeforeLastMatch = model.league
-                , currentMatch = Nothing
               }
             , Cmd.none
             )
@@ -158,7 +142,6 @@ update msg model =
             ( { model
                 | league = league
                 , leagueBeforeLastMatch = league
-                , currentMatch = Nothing
               }
             , Cmd.none
             )
@@ -174,8 +157,8 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model.currentMatch of
-        Just ( left, right ) ->
+    case League.currentMatch model.league of
+        Just (League.MatchBetween left right) ->
             Keyboard.downs
                 (\rawKey ->
                     case Keyboard.navigationKey rawKey of
@@ -198,7 +181,7 @@ subscriptions model =
 
 startNextMatchIfPossible : ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
 startNextMatchIfPossible ( model, cmd ) =
-    if model.currentMatch /= Nothing then
+    if League.currentMatch model.league /= Nothing then
         -- there's a match already in progress; no need to overwrite it.
         ( model, cmd )
 
@@ -206,7 +189,7 @@ startNextMatchIfPossible ( model, cmd ) =
         ( model
         , Cmd.batch
             [ cmd
-            , Random.generate StartMatch (League.match model.league)
+            , Random.generate GotNextMatch (League.nextMatch model.league)
             ]
         )
 
@@ -258,7 +241,7 @@ view model =
 
 currentMatch : Model -> Html Msg
 currentMatch model =
-    case model.currentMatch of
+    case League.currentMatch model.league of
         Nothing ->
             Html.div
                 [ css
@@ -287,7 +270,7 @@ currentMatch model =
                 , blueButton "Load Standings" KeeperWantsToLoadStandings
                 ]
 
-        Just ( playerA, playerB ) ->
+        Just (League.MatchBetween playerA playerB) ->
             let
                 chanceAWins =
                     Elo.odds playerA.rating playerB.rating
