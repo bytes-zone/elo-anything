@@ -69,8 +69,8 @@ update msg model =
 
         KeeperWantsToAddNewPlayer ->
             ( { model
-                | league = League.addNewPlayer (Player.init model.newPlayerName) model.league
-                , leagueBeforeLastMatch = League.addNewPlayer (Player.init model.newPlayerName) model.leagueBeforeLastMatch
+                | league = League.addPlayer (Player.init model.newPlayerName) model.league
+                , leagueBeforeLastMatch = League.addPlayer (Player.init model.newPlayerName) model.leagueBeforeLastMatch
                 , newPlayerName = ""
               }
             , Cmd.none

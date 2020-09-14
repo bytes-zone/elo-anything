@@ -32,4 +32,4 @@ decoderTests =
 leagueFuzzer : Fuzzer League
 leagueFuzzer =
     Fuzz.list playerFuzzer
-        |> Fuzz.map (List.foldr League.addNewPlayer League.init)
+        |> Fuzz.map (List.foldr League.addPlayer League.init)

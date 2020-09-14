@@ -1,6 +1,6 @@
 module League exposing
     ( League, init, decoder, encode
-    , players, addNewPlayer, updatePlayer, retirePlayer
+    , players, addPlayer, updatePlayer, retirePlayer
     , Match(..), currentMatch, nextMatch, startMatch, finishMatch
     )
 
@@ -8,7 +8,7 @@ module League exposing
 
 @docs League, init, decoder, encode
 
-@docs players, addNewPlayer, updatePlayer, retirePlayer
+@docs players, addPlayer, updatePlayer, retirePlayer
 
 @docs Match, currentMatch, nextMatch, startMatch, finishMatch
 
@@ -74,14 +74,14 @@ players (League league) =
     Dict.values league.players
 
 
-addNewPlayer : Player -> League -> League
-addNewPlayer player (League league) =
+addPlayer : Player -> League -> League
+addPlayer player (League league) =
     League { league | players = Dict.insert player.name player league.players }
 
 
 updatePlayer : Player -> League -> League
 updatePlayer =
-    addNewPlayer
+    addPlayer
 
 
 retirePlayer : Player -> League -> League
