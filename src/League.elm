@@ -54,11 +54,11 @@ encode league =
 {-| We need at least two players to guarantee that we return two distinct
 players.
 -}
-match : Player -> Player -> List Player -> Generator ( Player, Player )
-match a b rest =
+match : League -> Generator (Maybe ( Player, Player ))
+match league =
     let
         allPlayers =
-            a :: b :: rest
+            Dict.values league.players
 
         minimumMatches =
             allPlayers
@@ -70,31 +70,37 @@ match a b rest =
             allPlayers
                 |> List.filter (\player -> player.matches == minimumMatches)
     in
-    allPlayers
-        |> List.Extra.uniquePairs
-        |> List.filter (\( left, right ) -> List.member left leastPlayed || List.member right leastPlayed)
-        |> List.map
-            (\( left, right ) ->
-                ( toFloat <| abs (left.rating - right.rating)
-                , ( left, right )
-                )
-            )
-        |> -- flip the ordering so that the smallest gap / match adjustment is the most
-           -- likely to be picked.
-           (\weights ->
-                let
-                    maxDiff =
-                        List.maximum (List.map Tuple.first weights) |> Maybe.withDefault (10 ^ 9)
-                in
-                List.map (\( diff, pair ) -> ( (maxDiff - diff) ^ 2, pair )) weights
-           )
-        |> (\weights ->
-                case weights of
-                    firstWeight :: restOfWeights ->
-                        Random.weighted firstWeight restOfWeights
+    case allPlayers of
+        a :: b :: rest ->
+            allPlayers
+                |> List.Extra.uniquePairs
+                |> List.filter (\( left, right ) -> List.member left leastPlayed || List.member right leastPlayed)
+                |> List.map
+                    (\( left, right ) ->
+                        ( toFloat <| abs (left.rating - right.rating)
+                        , ( left, right )
+                        )
+                    )
+                |> -- flip the ordering so that the smallest gap / match adjustment is the most
+                   -- likely to be picked.
+                   (\weights ->
+                        let
+                            maxDiff =
+                                List.maximum (List.map Tuple.first weights) |> Maybe.withDefault (10 ^ 9)
+                        in
+                        List.map (\( diff, pair ) -> ( (maxDiff - diff) ^ 2, pair )) weights
+                   )
+                |> (\weights ->
+                        case weights of
+                            firstWeight :: restOfWeights ->
+                                Random.weighted firstWeight restOfWeights
+                                    |> Random.map Just
 
-                    _ ->
-                        -- how did we get here? Unless... a and b were the same
-                        -- player? Sneaky caller!
-                        Random.constant ( a, b )
-           )
+                            _ ->
+                                -- how did we get here? Unless... a and b were the same
+                                -- player? Sneaky caller!
+                                Random.constant (Just ( a, b ))
+                   )
+
+        _ ->
+            Random.constant Nothing

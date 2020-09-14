@@ -42,7 +42,7 @@ type Msg
     = KeeperUpdatedNewPlayerName String
     | KeeperWantsToAddNewPlayer
     | KeeperWantsToRetirePlayer Player
-    | StartMatchBetween ( Player, Player )
+    | StartMatch (Maybe ( Player, Player ))
     | MatchFinished Player Elo.Outcome Player
     | KeeperWantsToSaveStandings
     | KeeperWantsToLoadStandings
@@ -101,10 +101,13 @@ update msg model =
             )
                 |> startNextMatchIfPossible
 
-        StartMatchBetween players ->
-            ( { model | currentMatch = Just players }
+        StartMatch (Just match) ->
+            ( { model | currentMatch = Just match }
             , Cmd.none
             )
+
+        StartMatch Nothing ->
+            ( model, Cmd.none )
 
         MatchFinished playerA outcome playerB ->
             let
@@ -200,21 +203,12 @@ startNextMatchIfPossible ( model, cmd ) =
         ( model, cmd )
 
     else
-        let
-            players =
-                Dict.values model.league.players
-        in
-        case players of
-            first :: next :: rest ->
-                ( model
-                , Cmd.batch
-                    [ cmd
-                    , Random.generate StartMatchBetween (League.match first next rest)
-                    ]
-                )
-
-            _ ->
-                ( model, cmd )
+        ( model
+        , Cmd.batch
+            [ cmd
+            , Random.generate StartMatch (League.match model.league)
+            ]
+        )
 
 
 openSans : Css.Style
