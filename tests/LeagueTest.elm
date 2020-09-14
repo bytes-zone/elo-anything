@@ -21,8 +21,9 @@ decoderTests =
                     |> Expect.equal (Ok league)
         , fuzz leagueFuzzer "is backwards-compatible with the older dictionary format" <|
             \league ->
-                league.players
-                    |> Encode.dict identity Player.encode
+                League.players league
+                    |> List.map (\player -> ( player.name, Player.encode player ))
+                    |> Encode.object
                     |> Decode.decodeValue League.decoder
                     |> Expect.equal (Ok league)
         ]
@@ -30,7 +31,5 @@ decoderTests =
 
 leagueFuzzer : Fuzzer League
 leagueFuzzer =
-    Fuzz.map League
-        (Fuzz.list playerFuzzer
-            |> Fuzz.map (List.map (\player -> ( player.name, player )) >> Dict.fromList)
-        )
+    Fuzz.list playerFuzzer
+        |> Fuzz.map (List.foldr League.addNewPlayer League.init)
