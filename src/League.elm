@@ -206,7 +206,10 @@ finishMatch outcome league =
         Win { won, lost } ->
             let
                 newRatings =
-                    Elo.win Elo.sensitiveKFactor { won = won.rating, lost = lost.rating }
+                    Elo.win Elo.sensitiveKFactor
+                        { won = won.rating
+                        , lost = lost.rating
+                        }
             in
             league
                 |> updatePlayer (Player.incrementMatchesPlayed (Player.setRating newRatings.won won))

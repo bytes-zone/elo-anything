@@ -5,7 +5,7 @@ import Expect
 import Fuzz exposing (Fuzzer)
 import Json.Decode as Decode
 import Json.Encode as Encode
-import League exposing (League, Match(..))
+import League exposing (League, Match(..), Outcome(..))
 import Player
 import PlayerTest exposing (playerFuzzer)
 import Test exposing (..)
@@ -114,6 +114,94 @@ startMatchTests =
                     |> League.startMatch (Match player player)
                     |> League.currentMatch
                     |> Expect.equal Nothing
+        ]
+
+
+finishMatchTests : Test
+finishMatchTests =
+    let
+        dummy =
+            Player.init "A"
+
+        league =
+            League.init
+                |> League.addPlayer dummy
+    in
+    describe "finishMatch"
+        [ fuzz playerFuzzer "a win causes both players matches played to go up" <|
+            \winner ->
+                league
+                    |> League.addPlayer winner
+                    |> League.startMatch (Match winner dummy)
+                    |> League.finishMatch (Win { won = winner, lost = dummy })
+                    |> Expect.all
+                        [ League.getPlayer winner.name
+                            >> Maybe.map .matches
+                            >> Expect.equal (Just (winner.matches + 1))
+                        , League.getPlayer dummy.name
+                            >> Maybe.map .matches
+                            >> Expect.equal (Just (dummy.matches + 1))
+                        ]
+        , fuzz playerFuzzer "a win causes the winning player's score to go up" <|
+            \winner ->
+                league
+                    |> League.addPlayer winner
+                    |> League.startMatch (Match winner dummy)
+                    |> League.finishMatch (Win { won = winner, lost = dummy })
+                    |> League.getPlayer winner.name
+                    |> Maybe.map .rating
+                    |> Maybe.withDefault 0
+                    -- if the score difference is too great, the winning
+                    -- player won't gain any points. So really we need to check
+                    -- that the score *doesn't go down.*
+                    |> Expect.atLeast winner.rating
+        , fuzz playerFuzzer "a win causes the losing player's score to go down" <|
+            \winner ->
+                league
+                    |> League.addPlayer winner
+                    |> League.startMatch (Match winner dummy)
+                    |> League.finishMatch (Win { won = winner, lost = dummy })
+                    |> League.getPlayer dummy.name
+                    |> Maybe.map .rating
+                    |> Maybe.withDefault 0
+                    -- if the score difference is too great, the losing
+                    -- player won't lose any points. So really we need to check
+                    -- that the score *doesn't go down.*
+                    |> Expect.atMost dummy.rating
+        , fuzz playerFuzzer "a win does not change the total points in the system" <|
+            \winner ->
+                league
+                    |> League.addPlayer winner
+                    |> League.startMatch (Match winner dummy)
+                    |> League.finishMatch (Win { won = winner, lost = dummy })
+                    |> League.players
+                    |> List.map .rating
+                    |> List.sum
+                    |> Expect.equal (winner.rating + dummy.rating)
+        , fuzz playerFuzzer "a draw causes both players matches played to go up" <|
+            \player ->
+                league
+                    |> League.addPlayer player
+                    |> League.startMatch (Match player dummy)
+                    |> League.finishMatch (Draw { playerA = player, playerB = dummy })
+                    |> Expect.all
+                        [ League.getPlayer player.name
+                            >> Maybe.map .matches
+                            >> Expect.equal (Just (player.matches + 1))
+                        , League.getPlayer dummy.name
+                            >> Maybe.map .matches
+                            >> Expect.equal (Just (dummy.matches + 1))
+                        ]
+        , fuzz playerFuzzer "a draw does not change the total points in the system" <|
+            \player ->
+                league
+                    |> League.addPlayer player
+                    |> League.startMatch (Match player dummy)
+                    |> League.finishMatch (Draw { playerA = player, playerB = dummy })
+                    |> League.players
+                    |> List.map .rating
+                    |> List.sum
+                    |> Expect.equal (player.rating + dummy.rating)
         ]
 
 
