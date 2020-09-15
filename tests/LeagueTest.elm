@@ -36,13 +36,6 @@ decoderTests =
                 League.encode league
                     |> Decode.decodeValue League.decoder
                     |> Expect.equal (Ok league)
-        , fuzz leagueFuzzer "is backwards-compatible with the missing matches-played format" <|
-            \league ->
-                Encode.object [ ( "players", Encode.list Player.encode (League.players league) ) ]
-                    |> Decode.decodeValue League.decoder
-                    -- matches played will change with this. That's fine.
-                    |> Result.map League.players
-                    |> Expect.equal (Ok (League.players league))
         , fuzz leagueFuzzer "is backwards-compatible with the older dictionary format" <|
             \league ->
                 League.players league
