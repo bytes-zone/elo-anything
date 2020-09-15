@@ -18,7 +18,6 @@ import Dict exposing (Dict)
 import Elo
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import List.Extra
 import Player exposing (Player)
 import Random exposing (Generator)
 
