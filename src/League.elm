@@ -172,9 +172,6 @@ new match.
 nextMatch : League -> Generator (Maybe Match)
 nextMatch (League league) =
     let
-        playInMatches =
-            5
-
         allPlayers =
             Dict.values league.players
     in
@@ -272,7 +269,7 @@ finishMatch outcome league =
         Win { won, lost } ->
             let
                 newRatings =
-                    Elo.win Elo.sensitiveKFactor
+                    Elo.win (kFactor won)
                         { won = won.rating
                         , lost = lost.rating
                         }
@@ -285,7 +282,7 @@ finishMatch outcome league =
         Draw { playerA, playerB } ->
             let
                 newRatings =
-                    Elo.draw Elo.sensitiveKFactor
+                    Elo.draw (kFactor (higherRankedPlayer playerA playerB))
                         { playerA = playerA.rating
                         , playerB = playerB.rating
                         }
@@ -294,6 +291,45 @@ finishMatch outcome league =
                 |> updatePlayer (Player.incrementMatchesPlayed (Player.setRating newRatings.playerA playerA))
                 |> updatePlayer (Player.incrementMatchesPlayed (Player.setRating newRatings.playerB playerB))
                 |> clearMatch
+
+
+{-| Chesterton's export
+-}
+playInMatches : Int
+playInMatches =
+    5
+
+
+{-| Chesterton's export
+-}
+kFactor : Player -> Int
+kFactor player =
+    if player.matches < playInMatches then
+        -- players who are new to the league should move around more so that
+        -- they can get ranked closer to their actual correct position sooner.
+        Elo.sensitiveKFactor * 2
+
+    else if player.rating <= Elo.initialRating * 2 then
+        -- players who have been around a while should still be able to easily
+        -- move up in the rankings if it turns out they've been consistently
+        -- underrated.
+        Elo.sensitiveKFactor
+
+    else
+        -- players who are at the top of the ratings should be relatively
+        -- stable.
+        Elo.sensitiveKFactor // 2
+
+
+{-| Chesterton's export
+-}
+higherRankedPlayer : Player -> Player -> Player
+higherRankedPlayer a b =
+    if a.rating > b.rating then
+        a
+
+    else
+        b
 
 
 {-| Chesterton's export
