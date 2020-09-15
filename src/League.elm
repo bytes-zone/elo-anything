@@ -154,55 +154,88 @@ currentMatch (League league) =
     league.currentMatch
 
 
+{-| Select the next match according to a two-phase system:
+
+1.  If there are players who have less than the "play-in" number of matches
+    (that is, the number of matches I feel are needed to get a good idea of
+    the player's rough ranking) then choose among them randomly. If there
+    are no such players then choose among all the players, favoring players
+    who have played less recently.
+
+2.  Once the first player is chosen, choose a second player close to them
+    by rank. The ideal matchup goes from a tie to a decisive "this player
+    is ranked higher."
+
+Edge case: If there are fewer than two unique players, we can't schedule a
+new match.
+
+-}
 nextMatch : League -> Generator (Maybe Match)
 nextMatch (League league) =
     let
+        playInMatches =
+            5
+
         allPlayers =
             Dict.values league.players
-
-        minimumMatches =
-            allPlayers
-                |> List.map .matches
-                |> List.minimum
-                |> Maybe.withDefault 0
-
-        leastPlayed =
-            allPlayers
-                |> List.filter (\player -> player.matches == minimumMatches)
     in
     case allPlayers of
+        -- at least two
         a :: b :: rest ->
-            allPlayers
-                |> List.Extra.uniquePairs
-                |> List.filter (\( left, right ) -> List.member left leastPlayed || List.member right leastPlayed)
-                |> List.map
-                    (\( left, right ) ->
-                        ( toFloat <| abs (left.rating - right.rating)
-                        , ( left, right )
-                        )
-                    )
-                |> -- flip the ordering so that the smallest gap / match adjustment is the most
-                   -- likely to be picked.
-                   (\weights ->
-                        let
-                            maxDiff =
-                                List.maximum (List.map Tuple.first weights) |> Maybe.withDefault (10 ^ 9)
-                        in
-                        List.map (\( diff, pair ) -> ( (maxDiff - diff) ^ 2, pair )) weights
-                   )
-                |> (\weights ->
-                        case weights of
-                            firstWeight :: restOfWeights ->
-                                Random.weighted firstWeight restOfWeights
+            (case List.filter (\player -> player.matches <= playInMatches) allPlayers of
+                firstPlayIn :: restOfPlayIns ->
+                    Random.uniform firstPlayIn restOfPlayIns
 
-                            _ ->
-                                -- how did we get here? Unless... a and b were the same
-                                -- player? Sneaky caller!
-                                Random.constant ( a, b )
-                   )
-                |> Random.map (\( left, right ) -> Match left right)
+                _ ->
+                    let
+                        mostMatches =
+                            List.map .matches allPlayers
+                                |> List.maximum
+                                |> Maybe.withDefault 0
+                    in
+                    Random.weighted
+                        ( toFloat (mostMatches - a.matches) ^ 2, a )
+                        (List.map (\player -> ( toFloat (mostMatches - a.matches) ^ 2, player )) (b :: rest))
+            )
+                |> Random.andThen
+                    (\firstPlayer ->
+                        let
+                            ( head, tail ) =
+                                if firstPlayer == a then
+                                    ( b, rest )
+
+                                else if firstPlayer == b then
+                                    ( a, rest )
+
+                                else
+                                    ( a, b :: List.filter (\p -> p /= firstPlayer) rest )
+
+                            furthestAway =
+                                (head :: tail)
+                                    |> List.map (\player -> abs (firstPlayer.rating - player.rating))
+                                    |> List.maximum
+                                    |> Maybe.withDefault 0
+                        in
+                        Random.weighted
+                            ( toFloat (furthestAway - abs (firstPlayer.rating - head.rating)) ^ 2, head )
+                            (List.map (\player -> ( toFloat (furthestAway - abs (firstPlayer.rating - player.rating)) ^ 2, player )) tail)
+                            |> Random.map (Tuple.pair firstPlayer)
+                    )
+                |> Random.andThen
+                    (\( playerA, playerB ) ->
+                        Random.map
+                            (\flip ->
+                                if flip then
+                                    Match playerA playerB
+
+                                else
+                                    Match playerB playerA
+                            )
+                            (Random.uniform True [ False ])
+                    )
                 |> Random.map Just
 
+        -- one or zero players
         _ ->
             Random.constant Nothing
 
