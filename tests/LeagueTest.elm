@@ -129,96 +129,100 @@ finishMatchTests =
                 |> League.addPlayer dummy
     in
     describe "finishMatch"
-        [ fuzz playerFuzzer "a win causes both players matches played to go up" <|
-            \winner ->
-                league
-                    |> League.addPlayer winner
-                    |> League.startMatch (Match winner dummy)
-                    |> League.finishMatch (Win { won = winner, lost = dummy })
-                    |> Expect.all
-                        [ League.getPlayer winner.name
-                            >> Maybe.map .matches
-                            >> Expect.equal (Just (winner.matches + 1))
-                        , League.getPlayer dummy.name
-                            >> Maybe.map .matches
-                            >> Expect.equal (Just (dummy.matches + 1))
-                        ]
-        , fuzz playerFuzzer "a win changes ratings according to Elo" <|
-            \winner ->
-                let
-                    newRatings =
-                        Elo.win Elo.sensitiveKFactor
-                            { won = winner.rating
-                            , lost = dummy.rating
-                            }
-                in
-                league
-                    |> League.addPlayer winner
-                    |> League.startMatch (Match winner dummy)
-                    |> League.finishMatch (Win { won = winner, lost = dummy })
-                    |> Expect.all
-                        [ League.getPlayer winner.name
-                            >> Maybe.map .rating
-                            >> Expect.equal (Just newRatings.won)
-                        , League.getPlayer dummy.name
-                            >> Maybe.map .rating
-                            >> Expect.equal (Just newRatings.lost)
-                        ]
-        , fuzz playerFuzzer "a win does not change the total points in the system" <|
-            \winner ->
-                league
-                    |> League.addPlayer winner
-                    |> League.startMatch (Match winner dummy)
-                    |> League.finishMatch (Win { won = winner, lost = dummy })
-                    |> League.players
-                    |> List.map .rating
-                    |> List.sum
-                    |> Expect.equal (winner.rating + dummy.rating)
-        , fuzz playerFuzzer "a draw causes both players matches played to go up" <|
-            \player ->
-                league
-                    |> League.addPlayer player
-                    |> League.startMatch (Match player dummy)
-                    |> League.finishMatch (Draw { playerA = player, playerB = dummy })
-                    |> Expect.all
-                        [ League.getPlayer player.name
-                            >> Maybe.map .matches
-                            >> Expect.equal (Just (player.matches + 1))
-                        , League.getPlayer dummy.name
-                            >> Maybe.map .matches
-                            >> Expect.equal (Just (dummy.matches + 1))
-                        ]
-        , fuzz playerFuzzer "a draw changes ratings according to Elo" <|
-            \player ->
-                let
-                    newRatings =
-                        Elo.draw Elo.sensitiveKFactor
-                            { playerA = player.rating
-                            , playerB = dummy.rating
-                            }
-                in
-                league
-                    |> League.addPlayer player
-                    |> League.startMatch (Match player dummy)
-                    |> League.finishMatch (Draw { playerA = player, playerB = dummy })
-                    |> Expect.all
-                        [ League.getPlayer player.name
-                            >> Maybe.map .rating
-                            >> Expect.equal (Just newRatings.playerA)
-                        , League.getPlayer dummy.name
-                            >> Maybe.map .rating
-                            >> Expect.equal (Just newRatings.playerB)
-                        ]
-        , fuzz playerFuzzer "a draw does not change the total points in the system" <|
-            \player ->
-                league
-                    |> League.addPlayer player
-                    |> League.startMatch (Match player dummy)
-                    |> League.finishMatch (Draw { playerA = player, playerB = dummy })
-                    |> League.players
-                    |> List.map .rating
-                    |> List.sum
-                    |> Expect.equal (player.rating + dummy.rating)
+        [ describe "a win"
+            [ fuzz playerFuzzer "causes both players matches played to go up" <|
+                \winner ->
+                    league
+                        |> League.addPlayer winner
+                        |> League.startMatch (Match winner dummy)
+                        |> League.finishMatch (Win { won = winner, lost = dummy })
+                        |> Expect.all
+                            [ League.getPlayer winner.name
+                                >> Maybe.map .matches
+                                >> Expect.equal (Just (winner.matches + 1))
+                            , League.getPlayer dummy.name
+                                >> Maybe.map .matches
+                                >> Expect.equal (Just (dummy.matches + 1))
+                            ]
+            , fuzz playerFuzzer "changes ratings according to Elo" <|
+                \winner ->
+                    let
+                        newRatings =
+                            Elo.win Elo.sensitiveKFactor
+                                { won = winner.rating
+                                , lost = dummy.rating
+                                }
+                    in
+                    league
+                        |> League.addPlayer winner
+                        |> League.startMatch (Match winner dummy)
+                        |> League.finishMatch (Win { won = winner, lost = dummy })
+                        |> Expect.all
+                            [ League.getPlayer winner.name
+                                >> Maybe.map .rating
+                                >> Expect.equal (Just newRatings.won)
+                            , League.getPlayer dummy.name
+                                >> Maybe.map .rating
+                                >> Expect.equal (Just newRatings.lost)
+                            ]
+            , fuzz playerFuzzer "does not change the total points in the system" <|
+                \winner ->
+                    league
+                        |> League.addPlayer winner
+                        |> League.startMatch (Match winner dummy)
+                        |> League.finishMatch (Win { won = winner, lost = dummy })
+                        |> League.players
+                        |> List.map .rating
+                        |> List.sum
+                        |> Expect.equal (winner.rating + dummy.rating)
+            ]
+        , describe "a draw"
+            [ fuzz playerFuzzer "a draw causes both players matches played to go up" <|
+                \player ->
+                    league
+                        |> League.addPlayer player
+                        |> League.startMatch (Match player dummy)
+                        |> League.finishMatch (Draw { playerA = player, playerB = dummy })
+                        |> Expect.all
+                            [ League.getPlayer player.name
+                                >> Maybe.map .matches
+                                >> Expect.equal (Just (player.matches + 1))
+                            , League.getPlayer dummy.name
+                                >> Maybe.map .matches
+                                >> Expect.equal (Just (dummy.matches + 1))
+                            ]
+            , fuzz playerFuzzer "a draw changes ratings according to Elo" <|
+                \player ->
+                    let
+                        newRatings =
+                            Elo.draw Elo.sensitiveKFactor
+                                { playerA = player.rating
+                                , playerB = dummy.rating
+                                }
+                    in
+                    league
+                        |> League.addPlayer player
+                        |> League.startMatch (Match player dummy)
+                        |> League.finishMatch (Draw { playerA = player, playerB = dummy })
+                        |> Expect.all
+                            [ League.getPlayer player.name
+                                >> Maybe.map .rating
+                                >> Expect.equal (Just newRatings.playerA)
+                            , League.getPlayer dummy.name
+                                >> Maybe.map .rating
+                                >> Expect.equal (Just newRatings.playerB)
+                            ]
+            , fuzz playerFuzzer "a draw does not change the total points in the system" <|
+                \player ->
+                    league
+                        |> League.addPlayer player
+                        |> League.startMatch (Match player dummy)
+                        |> League.finishMatch (Draw { playerA = player, playerB = dummy })
+                        |> League.players
+                        |> List.map .rating
+                        |> List.sum
+                        |> Expect.equal (player.rating + dummy.rating)
+            ]
         ]
 
 
