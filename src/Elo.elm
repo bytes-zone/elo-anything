@@ -1,4 +1,4 @@
-module Elo exposing (Outcome(..), initialRating, newRating, odds, sensitiveKFactor)
+module Elo exposing (draw, initialRating, odds, sensitiveKFactor, win)
 
 {-| Calculate [Elo](https://en.wikipedia.org/wiki/Elo_rating_system) scores.
 -}
@@ -45,47 +45,19 @@ odds a b =
     rA / (rA + rB)
 
 
-type Outcome
-    = WonAgainst
-    | DrewWith
-    | LostTo
-
-
-invertOutcome : Outcome -> Outcome
-invertOutcome outcome =
-    case outcome of
-        WonAgainst ->
-            LostTo
-
-        DrewWith ->
-            DrewWith
-
-        LostTo ->
-            WonAgainst
-
-
-score : Outcome -> Float
-score outcome =
-    case outcome of
-        WonAgainst ->
-            1
-
-        DrewWith ->
-            0.5
-
-        LostTo ->
-            0
-
-
-{-| Both player's new ratings given the outcome of the match.
-
-For example, to say player a won against player b:
-
-    newRating sensitiveKFactor playerARating WonAgainst playerBRating
-
+{-| One player won, the other player lost.
 -}
-newRating : Int -> Int -> Outcome -> Int -> ( Int, Int )
-newRating kFactor a outcome b =
-    ( toFloat a + toFloat kFactor * (score outcome - odds a b) |> round
-    , toFloat b + toFloat kFactor * (score (invertOutcome outcome) - odds b a) |> round
-    )
+win : Int -> { won : Int, lost : Int } -> { won : Int, lost : Int }
+win kFactor { won, lost } =
+    { won = toFloat won + toFloat kFactor * (1 - odds won lost) |> round
+    , lost = toFloat lost + toFloat kFactor * (0 - odds lost won) |> round
+    }
+
+
+{-| The players drew/tied.
+-}
+draw : Int -> { playerA : Int, playerB : Int } -> { playerA : Int, playerB : Int }
+draw kFactor { playerA, playerB } =
+    { playerA = toFloat playerA + toFloat kFactor * (0.5 - odds playerA playerB) |> round
+    , playerB = toFloat playerB + toFloat kFactor * (0.5 - odds playerB playerA) |> round
+    }

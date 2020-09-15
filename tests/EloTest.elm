@@ -47,30 +47,35 @@ newRating =
         [ fuzz ratingFuzzer "a player gains more points by winning against a heavy favorite than a relative equal" <|
             \player ->
                 let
-                    equal =
-                        player + 100
-
                     favorite =
                         player + 1000
 
-                    ( newAgainstEqual, _ ) =
-                        Elo.newRating Elo.sensitiveKFactor player WonAgainst equal
+                    againstRelativeEqual =
+                        Elo.win Elo.sensitiveKFactor
+                            { won = player
+                            , lost = player + 100
+                            }
 
-                    ( newAgainstFavorite, _ ) =
-                        Elo.newRating Elo.sensitiveKFactor player WonAgainst favorite
+                    againstFavorite =
+                        Elo.win Elo.sensitiveKFactor
+                            { won = player
+                            , lost = player + 1000
+                            }
                 in
-                newAgainstEqual |> Expect.lessThan newAgainstFavorite
+                againstRelativeEqual.won |> Expect.lessThan againstFavorite.won
         , fuzz2 ratingFuzzer (Fuzz.intRange 1 32) "a higher k-value produces a larger score difference than a lower one" <|
             \player kFactorIncrease ->
                 let
-                    opponent =
-                        player + 100
+                    matchup =
+                        { won = player
+                        , lost = player + 100
+                        }
 
-                    ( newWithLowKFactor, _ ) =
-                        Elo.newRating Elo.sensitiveKFactor player WonAgainst opponent
+                    low =
+                        Elo.win Elo.sensitiveKFactor matchup
 
-                    ( newWithHighKFactor, _ ) =
-                        Elo.newRating (Elo.sensitiveKFactor + kFactorIncrease) player WonAgainst opponent
+                    high =
+                        Elo.win (Elo.sensitiveKFactor + kFactorIncrease) matchup
                 in
-                newWithLowKFactor |> Expect.lessThan newWithHighKFactor
+                low.won |> Expect.lessThan high.won
         ]

@@ -40,7 +40,8 @@ type Msg
     | KeeperWantsToAddNewPlayer
     | KeeperWantsToRetirePlayer Player
     | GotNextMatch (Maybe League.Match)
-    | MatchFinished Player Elo.Outcome Player
+    | MatchFinishedInWin { won : Player, lost : Player }
+    | MatchFinishedInDraw { playerA : Player, playerB : Player }
     | KeeperWantsToSaveStandings
     | KeeperWantsToLoadStandings
     | SelectedStandingsFile File
@@ -93,16 +94,36 @@ update msg model =
         GotNextMatch Nothing ->
             ( model, Cmd.none )
 
-        MatchFinished playerA outcome playerB ->
+        MatchFinishedInWin { won, lost } ->
             let
-                ( playerARating, playerBRating ) =
-                    newRating playerA.rating outcome playerB.rating
+                newRatings =
+                    Elo.win Elo.sensitiveKFactor { won = won.rating, lost = lost.rating }
             in
             ( { model
                 | league =
                     model.league
-                        |> League.updatePlayer (Player.incrementMatchesPlayed (Player.setRating playerARating playerA))
-                        |> League.updatePlayer (Player.incrementMatchesPlayed (Player.setRating playerBRating playerB))
+                        |> League.updatePlayer (Player.incrementMatchesPlayed (Player.setRating newRatings.won won))
+                        |> League.updatePlayer (Player.incrementMatchesPlayed (Player.setRating newRatings.lost lost))
+                        |> League.finishMatch
+                , leagueBeforeLastMatch = model.league
+              }
+            , Cmd.none
+            )
+                |> startNextMatchIfPossible
+
+        MatchFinishedInDraw { playerA, playerB } ->
+            let
+                newRatings =
+                    Elo.draw Elo.sensitiveKFactor
+                        { playerA = playerA.rating
+                        , playerB = playerB.rating
+                        }
+            in
+            ( { model
+                | league =
+                    model.league
+                        |> League.updatePlayer (Player.incrementMatchesPlayed (Player.setRating newRatings.playerA playerA))
+                        |> League.updatePlayer (Player.incrementMatchesPlayed (Player.setRating newRatings.playerB playerB))
                         |> League.finishMatch
                 , leagueBeforeLastMatch = model.league
               }
@@ -163,13 +184,13 @@ subscriptions model =
                 (\rawKey ->
                     case Keyboard.navigationKey rawKey of
                         Just Keyboard.ArrowLeft ->
-                            MatchFinished left Elo.WonAgainst right
+                            MatchFinishedInWin { won = left, lost = right }
 
                         Just Keyboard.ArrowRight ->
-                            MatchFinished right Elo.WonAgainst left
+                            MatchFinishedInWin { won = right, lost = left }
 
                         Just Keyboard.ArrowDown ->
-                            MatchFinished left Elo.DrewWith right
+                            MatchFinishedInDraw { playerA = left, playerB = right }
 
                         _ ->
                             IgnoredKey
@@ -326,13 +347,13 @@ currentMatch model =
                     ]
                     [ Html.div
                         [ css [ Css.width (Css.pct 40) ] ]
-                        [ blueButton "Winner!" (MatchFinished playerA Elo.WonAgainst playerB) ]
+                        [ blueButton "Winner!" (MatchFinishedInWin { lost = playerB, won = playerA }) ]
                     , Html.div
                         [ css [ Css.width (Css.pct 20) ] ]
-                        [ blueButton "Tie!" (MatchFinished playerA Elo.DrewWith playerB) ]
+                        [ blueButton "Tie!" (MatchFinishedInDraw { playerA = playerA, playerB = playerB }) ]
                     , Html.div
                         [ css [ Css.width (Css.pct 40) ] ]
-                        [ blueButton "Winner!" (MatchFinished playerB Elo.WonAgainst playerA) ]
+                        [ blueButton "Winner!" (MatchFinishedInWin { won = playerB, lost = playerA }) ]
                     ]
                 ]
 
@@ -389,11 +410,6 @@ activePlayer player =
             ]
         ]
         [ Html.text player.name ]
-
-
-newRating : Int -> Elo.Outcome -> Int -> ( Int, Int )
-newRating =
-    Elo.newRating Elo.sensitiveKFactor
 
 
 rankings : Model -> Html Msg
