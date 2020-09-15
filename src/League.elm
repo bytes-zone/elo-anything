@@ -1,6 +1,6 @@
 module League exposing
     ( League, init, decoder, encode
-    , players, addPlayer, updatePlayer, retirePlayer
+    , players, addPlayer, retirePlayer
     , Match(..), currentMatch, nextMatch, startMatch, Outcome(..), finishMatch
     )
 
@@ -8,7 +8,7 @@ module League exposing
 
 @docs League, init, decoder, encode
 
-@docs players, addPlayer, updatePlayer, retirePlayer
+@docs players, addPlayer, retirePlayer
 
 @docs Match, currentMatch, nextMatch, startMatch, Outcome, finishMatch
 
@@ -80,6 +80,8 @@ addPlayer player (League league) =
     League { league | players = Dict.insert player.name player league.players }
 
 
+{-| Chesterton's export
+-}
 updatePlayer : Player -> League -> League
 updatePlayer =
     addPlayer
@@ -203,7 +205,7 @@ finishMatch outcome league =
                 |> clearMatch
 
 
-{-| don't expose me unless you think it through
+{-| Chesterton's export
 -}
 clearMatch : League -> League
 clearMatch (League league) =
