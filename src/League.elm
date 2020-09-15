@@ -31,7 +31,7 @@ type League
 
 
 type Match
-    = MatchBetween Player Player
+    = Match Player Player
 
 
 
@@ -97,7 +97,7 @@ retirePlayer player (League league) =
                     Nothing ->
                         Nothing
 
-                    Just (MatchBetween a b) ->
+                    Just (Match a b) ->
                         if player.name == a.name || player.name == b.name then
                             Nothing
 
@@ -161,7 +161,7 @@ nextMatch (League league) =
                                 -- player? Sneaky caller!
                                 Random.constant ( a, b )
                    )
-                |> Random.map (\( left, right ) -> MatchBetween left right)
+                |> Random.map (\( left, right ) -> Match left right)
                 |> Random.map Just
 
         _ ->
@@ -169,8 +169,25 @@ nextMatch (League league) =
 
 
 startMatch : Match -> League -> League
-startMatch match (League league) =
-    League { league | currentMatch = Just match }
+startMatch (Match playerA playerB) (League league) =
+    League
+        { league
+            | currentMatch =
+                -- don't start a match with players that aren't in the
+                -- league...
+                Maybe.map2 Tuple.pair
+                    (Dict.get playerA.name league.players)
+                    (Dict.get playerB.name league.players)
+                    |> Maybe.andThen
+                        (\( gotA, gotB ) ->
+                            -- ... or when the players are the same player
+                            if gotA /= gotB then
+                                Just (Match gotA gotB)
+
+                            else
+                                Nothing
+                        )
+        }
 
 
 type Outcome

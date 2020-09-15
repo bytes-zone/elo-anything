@@ -150,7 +150,7 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case League.currentMatch model.league of
-        Just (League.MatchBetween left right) ->
+        Just (League.Match left right) ->
             Keyboard.downs
                 (\rawKey ->
                     case Keyboard.navigationKey rawKey of
@@ -262,7 +262,7 @@ currentMatch model =
                 , blueButton "Load Standings" KeeperWantsToLoadStandings
                 ]
 
-        Just (League.MatchBetween playerA playerB) ->
+        Just (League.Match playerA playerB) ->
             let
                 chanceAWins =
                     Elo.odds playerA.rating playerB.rating
