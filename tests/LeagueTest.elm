@@ -96,7 +96,11 @@ startMatchTests =
                     |> League.currentMatch
                     |> Expect.equal Nothing
         , fuzz2 playerFuzzer playerFuzzer "you can start a match between two players in the league" <|
-            \playerA playerB ->
+            \playerA playerBMaybeSame ->
+                let
+                    playerB =
+                        { playerBMaybeSame | name = "unique " ++ playerBMaybeSame.name }
+                in
                 League.init
                     |> League.addPlayer playerA
                     |> League.addPlayer playerB
