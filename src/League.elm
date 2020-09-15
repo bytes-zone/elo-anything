@@ -1,7 +1,7 @@
 module League exposing
     ( League, init, decoder, encode
     , players, addPlayer, updatePlayer, retirePlayer
-    , Match(..), currentMatch, nextMatch, startMatch, finishMatch
+    , Match(..), currentMatch, nextMatch, startMatch, Outcome(..), finishMatch
     )
 
 {-|
@@ -10,11 +10,12 @@ module League exposing
 
 @docs players, addPlayer, updatePlayer, retirePlayer
 
-@docs Match, currentMatch, nextMatch, startMatch, finishMatch
+@docs Match, currentMatch, nextMatch, startMatch, Outcome, finishMatch
 
 -}
 
 import Dict exposing (Dict)
+import Elo
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import List.Extra
@@ -170,6 +171,40 @@ startMatch match (League league) =
     League { league | currentMatch = Just match }
 
 
-finishMatch : League -> League
-finishMatch (League league) =
+type Outcome
+    = Win { won : Player, lost : Player }
+    | Draw { playerA : Player, playerB : Player }
+
+
+finishMatch : Outcome -> League -> League
+finishMatch outcome league =
+    case outcome of
+        Win { won, lost } ->
+            let
+                newRatings =
+                    Elo.win Elo.sensitiveKFactor { won = won.rating, lost = lost.rating }
+            in
+            league
+                |> updatePlayer (Player.incrementMatchesPlayed (Player.setRating newRatings.won won))
+                |> updatePlayer (Player.incrementMatchesPlayed (Player.setRating newRatings.lost lost))
+                |> clearMatch
+
+        Draw { playerA, playerB } ->
+            let
+                newRatings =
+                    Elo.draw Elo.sensitiveKFactor
+                        { playerA = playerA.rating
+                        , playerB = playerB.rating
+                        }
+            in
+            league
+                |> updatePlayer (Player.incrementMatchesPlayed (Player.setRating newRatings.playerA playerA))
+                |> updatePlayer (Player.incrementMatchesPlayed (Player.setRating newRatings.playerB playerB))
+                |> clearMatch
+
+
+{-| don't expose me unless you think it through
+-}
+clearMatch : League -> League
+clearMatch (League league) =
     League { league | currentMatch = Nothing }
