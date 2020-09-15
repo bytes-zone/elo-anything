@@ -11,6 +11,22 @@ import PlayerTest exposing (playerFuzzer)
 import Test exposing (..)
 
 
+initTests : Test
+initTests =
+    describe "init"
+        [ test "starts with no players" <|
+            \_ ->
+                League.init
+                    |> League.players
+                    |> Expect.equal []
+        , test "starts without a current match" <|
+            \_ ->
+                League.init
+                    |> League.currentMatch
+                    |> Expect.equal Nothing
+        ]
+
+
 decoderTests : Test
 decoderTests =
     describe "decoder"
