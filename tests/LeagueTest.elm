@@ -1,6 +1,7 @@
 module LeagueTest exposing (..)
 
 import Dict exposing (Dict)
+import Elo
 import Expect
 import Fuzz exposing (Fuzzer)
 import Json.Decode as Decode
@@ -142,32 +143,27 @@ finishMatchTests =
                             >> Maybe.map .matches
                             >> Expect.equal (Just (dummy.matches + 1))
                         ]
-        , fuzz playerFuzzer "a win causes the winning player's score to go up" <|
+        , fuzz playerFuzzer "a win changes ratings according to Elo" <|
             \winner ->
+                let
+                    newRatings =
+                        Elo.win Elo.sensitiveKFactor
+                            { won = winner.rating
+                            , lost = dummy.rating
+                            }
+                in
                 league
                     |> League.addPlayer winner
                     |> League.startMatch (Match winner dummy)
                     |> League.finishMatch (Win { won = winner, lost = dummy })
-                    |> League.getPlayer winner.name
-                    |> Maybe.map .rating
-                    |> Maybe.withDefault 0
-                    -- if the score difference is too great, the winning
-                    -- player won't gain any points. So really we need to check
-                    -- that the score *doesn't go down.*
-                    |> Expect.atLeast winner.rating
-        , fuzz playerFuzzer "a win causes the losing player's score to go down" <|
-            \winner ->
-                league
-                    |> League.addPlayer winner
-                    |> League.startMatch (Match winner dummy)
-                    |> League.finishMatch (Win { won = winner, lost = dummy })
-                    |> League.getPlayer dummy.name
-                    |> Maybe.map .rating
-                    |> Maybe.withDefault 0
-                    -- if the score difference is too great, the losing
-                    -- player won't lose any points. So really we need to check
-                    -- that the score *doesn't go down.*
-                    |> Expect.atMost dummy.rating
+                    |> Expect.all
+                        [ League.getPlayer winner.name
+                            >> Maybe.map .rating
+                            >> Expect.equal (Just newRatings.won)
+                        , League.getPlayer dummy.name
+                            >> Maybe.map .rating
+                            >> Expect.equal (Just newRatings.lost)
+                        ]
         , fuzz playerFuzzer "a win does not change the total points in the system" <|
             \winner ->
                 league
@@ -191,6 +187,27 @@ finishMatchTests =
                         , League.getPlayer dummy.name
                             >> Maybe.map .matches
                             >> Expect.equal (Just (dummy.matches + 1))
+                        ]
+        , fuzz playerFuzzer "a draw changes ratings according to Elo" <|
+            \player ->
+                let
+                    newRatings =
+                        Elo.draw Elo.sensitiveKFactor
+                            { playerA = player.rating
+                            , playerB = dummy.rating
+                            }
+                in
+                league
+                    |> League.addPlayer player
+                    |> League.startMatch (Match player dummy)
+                    |> League.finishMatch (Draw { playerA = player, playerB = dummy })
+                    |> Expect.all
+                        [ League.getPlayer player.name
+                            >> Maybe.map .rating
+                            >> Expect.equal (Just newRatings.playerA)
+                        , League.getPlayer dummy.name
+                            >> Maybe.map .rating
+                            >> Expect.equal (Just newRatings.playerB)
                         ]
         , fuzz playerFuzzer "a draw does not change the total points in the system" <|
             \player ->
