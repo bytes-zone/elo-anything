@@ -19,6 +19,17 @@ roundTripDecoderTest =
 playerFuzzer : Fuzzer Player
 playerFuzzer =
     Fuzz.map3 Player
-        Fuzz.string
+        nameFuzzer
         (Fuzz.intRange 1000 3000)
         (Fuzz.intRange 0 50)
+
+
+nameFuzzer : Fuzzer String
+nameFuzzer =
+    let
+        chars =
+            Fuzz.intRange (Char.toCode 'a') (Char.toCode 'c')
+                |> Fuzz.map Char.fromCode
+    in
+    Fuzz.map2 (::) chars (Fuzz.list chars)
+        |> Fuzz.map String.fromList
