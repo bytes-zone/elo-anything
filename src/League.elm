@@ -1,7 +1,7 @@
 module League exposing
     ( League, init, decoder, encode
     , addPlayer, players, getPlayer, retirePlayer
-    , Match(..), currentMatch, nextMatch, startMatch, Outcome(..), finishMatch
+    , Match(..), currentMatch, nextMatch, startMatch, Outcome(..), finishMatch, kFactor
     )
 
 {-|
@@ -10,7 +10,7 @@ module League exposing
 
 @docs addPlayer, players, getPlayer, retirePlayer
 
-@docs Match, currentMatch, nextMatch, startMatch, Outcome, finishMatch
+@docs Match, currentMatch, nextMatch, startMatch, Outcome, finishMatch, kFactor
 
 -}
 
@@ -300,8 +300,6 @@ playInMatches =
     5
 
 
-{-| Chesterton's export
--}
 kFactor : Player -> Int
 kFactor player =
     if player.matches < playInMatches then

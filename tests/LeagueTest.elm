@@ -157,7 +157,7 @@ finishMatchTests =
                 \winner ->
                     let
                         newRatings =
-                            Elo.win Elo.sensitiveKFactor
+                            Elo.win (League.kFactor winner)
                                 { won = winner.rating
                                 , lost = dummy.rating
                                 }
@@ -204,7 +204,15 @@ finishMatchTests =
                 \player ->
                     let
                         newRatings =
-                            Elo.draw Elo.sensitiveKFactor
+                            Elo.draw
+                                (League.kFactor
+                                    (if player.rating > dummy.rating then
+                                        player
+
+                                     else
+                                        dummy
+                                    )
+                                )
                                 { playerA = player.rating
                                 , playerB = dummy.rating
                                 }
