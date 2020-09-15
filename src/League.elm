@@ -26,6 +26,7 @@ import Random exposing (Generator)
 type League
     = League
         { players : Dict String Player
+        , matchesPlayed : Int
         , currentMatch : Maybe Match
         }
 
@@ -42,28 +43,61 @@ init : League
 init =
     League
         { players = Dict.empty
+        , matchesPlayed = 0
         , currentMatch = Nothing
         }
 
 
 decoder : Decoder League
 decoder =
-    Decode.map
-        (\newPlayers -> League { players = newPlayers, currentMatch = Nothing })
-        (Decode.oneOf
-            [ Decode.field "players" (Decode.list Player.decoder)
-                |> Decode.map (List.map (\player -> ( player.name, player )))
-                |> Decode.map Dict.fromList
-            , -- old formats
-              Decode.dict Player.decoder
-            ]
-        )
+    Decode.oneOf
+        [ Decode.map2
+            (\newPlayers matchesPlayed ->
+                League
+                    { players = newPlayers
+                    , matchesPlayed = matchesPlayed
+                    , currentMatch = Nothing
+                    }
+            )
+            playersDecoder
+            (Decode.field "matchesPlayed" Decode.int)
+        , -- old formats
+          Decode.map
+            (\newPlayers ->
+                League
+                    { players = newPlayers
+                    , matchesPlayed =
+                        newPlayers
+                            |> Dict.values
+                            |> List.map .matches
+                            |> List.maximum
+                            |> Maybe.withDefault 0
+                    , currentMatch = Nothing
+                    }
+            )
+            (Decode.oneOf
+                [ -- old format:  : missing matches played
+                  playersDecoder
+                , -- old format: only players as a dict
+                  Decode.dict Player.decoder
+                ]
+            )
+        ]
+
+
+playersDecoder : Decoder (Dict String Player)
+playersDecoder =
+    Decode.field "players" (Decode.list Player.decoder)
+        |> Decode.map (List.map (\player -> ( player.name, player )))
+        |> Decode.map Dict.fromList
 
 
 encode : League -> Encode.Value
 encode (League league) =
     Encode.object
-        [ ( "players", Encode.list Player.encode (Dict.values league.players) ) ]
+        [ ( "players", Encode.list Player.encode (Dict.values league.players) )
+        , ( "matchesPlayed", Encode.int league.matchesPlayed )
+        ]
 
 
 
