@@ -448,6 +448,11 @@ rankings model =
                     previousRank =
                         Dict.get player.name previousStandings
                             |> Maybe.withDefault rank
+
+                    isPlaying =
+                        League.currentMatch model.league
+                            |> Maybe.map (\(League.Match a b) -> player == a || player == b)
+                            |> Maybe.withDefault False
                 in
                 ( player.name
                 , Html.tr
@@ -458,7 +463,10 @@ rankings model =
                             , Css.textAlign Css.center
                             ]
                         ]
-                        (if rank < previousRank then
+                        (if isPlaying then
+                            [ circle (Css.hex "EFE700") ]
+
+                         else if rank < previousRank then
                             [ upArrow (Css.hex "6DD400")
                             , Html.span
                                 [ css
@@ -599,6 +607,20 @@ downArrow color =
             , Css.borderTop3 (Css.px 10) Css.solid color
             , Css.display Css.inlineBlock
             , Css.margin4 (Css.px 2) (Css.px 5) (Css.px 2) (Css.px 2)
+            ]
+        ]
+        []
+
+
+circle : Css.Color -> Html msg
+circle color =
+    Html.div
+        [ css
+            [ Css.width (Css.px 10)
+            , Css.height (Css.px 10)
+            , Css.borderRadius (Css.pct 100)
+            , Css.backgroundColor color
+            , Css.margin2 Css.zero Css.auto
             ]
         ]
         []
