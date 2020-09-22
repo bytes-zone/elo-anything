@@ -26,8 +26,8 @@
       };
 
       "rtfeldman/elm-css" = {
-        sha256 = "05sgz21jnnmz6m5s74515337n1aanab2zzn8jpw3bhdjc9cwwfcj";
-        version = "16.0.1";
+        sha256 = "0nxiyxyw3kw55whkpwhrcgc0dr6a8zlm2nqvsaqdw6mzkykg0ba6";
+        version = "16.1.0";
       };
 
       "elm/core" = {
@@ -38,11 +38,6 @@
       "tesk9/accessible-html-with-css" = {
         sha256 = "0yb7zpmyn1v8lyvkpqw6abpywc7dqbj50ijcy9bgnhzrijinrlb6";
         version = "2.1.1";
-      };
-
-      "elm-community/list-extra" = {
-        sha256 = "1rvr1c8cfb3dwf3li17l9ziax6d1fshkliasspnw6rviva38lw34";
-        version = "8.2.4";
       };
 
       "elm/random" = {
@@ -73,11 +68,6 @@
       "elm/time" = {
         sha256 = "0vch7i86vn0x8b850w1p69vplll1bnbkp8s383z7pinyg94cm2z1";
         version = "1.0.0";
-      };
-
-      "Skinney/murmur3" = {
-        sha256 = "1iiia68w8wlp2qjilyqgnzgjcxby47gla3rw5minj8i5c64zk18j";
-        version = "2.0.8";
       };
 
       "elm/virtual-dom" = {
