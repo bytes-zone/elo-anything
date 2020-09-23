@@ -275,6 +275,9 @@ playInMatches =
     5
 
 
+{-| Thought: long-term, it may be better to say the 90th percentile of
+competitors gets the insensitive k-factor instead of defining a cutoff.
+-}
 kFactor : Player -> Int
 kFactor player =
     if player.matches < playInMatches then
@@ -282,10 +285,13 @@ kFactor player =
         -- they can get ranked closer to their actual correct position sooner.
         Elo.sensitiveKFactor * 2
 
-    else if player.rating <= Elo.initialRating * 2 then
+    else if player.rating <= round (toFloat Elo.initialRating * 1.1) then
         -- players who have been around a while should still be able to easily
         -- move up in the rankings if it turns out they've been consistently
         -- underrated.
+        --
+        -- The threshold here may seem a little low here but it's only 4 of
+        -- the 47 items in the list I use elo-anything for.
         Elo.sensitiveKFactor
 
     else
