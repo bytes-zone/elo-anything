@@ -193,7 +193,7 @@ openSans =
 
 view : Model -> Document Msg
 view model =
-    { title = "ELO Anything!"
+    { title = "Elo Anything!"
     , body =
         [ Css.Reset.meyerV2
         , Css.Reset.borderBoxV201408
