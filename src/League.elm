@@ -95,8 +95,7 @@ addPlayer player (League league) =
     League { league | players = Dict.insert player.name player league.players }
 
 
-{-| Chesterton's export
--}
+{-| -}
 updatePlayer : Player -> League -> League
 updatePlayer =
     addPlayer
@@ -270,8 +269,7 @@ finishMatch outcome league =
                 |> clearMatch
 
 
-{-| Chesterton's export
--}
+{-| -}
 playInMatches : Int
 playInMatches =
     5
@@ -296,8 +294,7 @@ kFactor player =
         Elo.sensitiveKFactor // 2
 
 
-{-| Chesterton's export
--}
+{-| -}
 higherRankedPlayer : Player -> Player -> Player
 higherRankedPlayer a b =
     if a.rating > b.rating then
@@ -307,8 +304,7 @@ higherRankedPlayer a b =
         b
 
 
-{-| Chesterton's export
--}
+{-| -}
 clearMatch : League -> League
 clearMatch (League league) =
     League { league | currentMatch = Nothing }
