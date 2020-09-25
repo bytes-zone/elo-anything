@@ -9,6 +9,7 @@ import Elo
 import File exposing (File)
 import File.Download as Download
 import File.Select as Select
+import History exposing (History)
 import Html.Styled as WildWildHtml
 import Html.Styled.Attributes as Attributes exposing (css)
 import Html.Styled.Events as Events
@@ -27,8 +28,7 @@ type alias Flags =
 
 
 type alias Model =
-    { league : League
-    , leagueBeforeLastMatch : League
+    { history : History League
 
     -- view state: new player form
     , newPlayerName : String
@@ -50,8 +50,7 @@ type Msg
 
 init : Flags -> ( Model, Cmd Msg )
 init _ =
-    ( { league = League.init
-      , leagueBeforeLastMatch = League.init
+    ( { history = History.init 50 League.init
       , newPlayerName = ""
       }
     , Cmd.none
@@ -69,8 +68,7 @@ update msg model =
 
         KeeperWantsToAddNewPlayer ->
             ( { model
-                | league = League.addPlayer (Player.init model.newPlayerName) model.league
-                , leagueBeforeLastMatch = League.addPlayer (Player.init model.newPlayerName) model.leagueBeforeLastMatch
+                | history = History.mapPush (League.addPlayer (Player.init model.newPlayerName)) model.history
                 , newPlayerName = ""
               }
             , Cmd.none
@@ -78,15 +76,13 @@ update msg model =
                 |> startNextMatchIfPossible
 
         KeeperWantsToRetirePlayer player ->
-            ( { model
-                | league = League.retirePlayer player model.league
-              }
+            ( { model | history = History.mapPush (League.retirePlayer player) model.history }
             , Cmd.none
             )
                 |> startNextMatchIfPossible
 
         GotNextMatch (Just match) ->
-            ( { model | league = League.startMatch match model.league }
+            ( { model | history = History.mapPush (League.startMatch match) model.history }
             , Cmd.none
             )
 
@@ -94,10 +90,7 @@ update msg model =
             ( model, Cmd.none )
 
         MatchFinished outcome ->
-            ( { model
-                | league = League.finishMatch outcome model.league
-                , leagueBeforeLastMatch = model.league
-              }
+            ( { model | history = History.mapPush (League.finishMatch outcome) model.history }
             , Cmd.none
             )
                 |> startNextMatchIfPossible
@@ -107,7 +100,7 @@ update msg model =
             , Download.string
                 "standings.json"
                 "application/json"
-                (encode 2 (League.encode model.league))
+                (encode 2 (League.encode (History.current model.history)))
             )
 
         KeeperWantsToLoadStandings ->
@@ -131,10 +124,7 @@ update msg model =
             )
 
         LoadedLeague (Ok league) ->
-            ( { model
-                | league = league
-                , leagueBeforeLastMatch = league
-              }
+            ( { model | history = History.init 50 league }
             , Cmd.none
             )
                 |> startNextMatchIfPossible
@@ -149,7 +139,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case League.currentMatch model.league of
+    case League.currentMatch (History.current model.history) of
         Just (League.Match left right) ->
             Keyboard.downs
                 (\rawKey ->
@@ -173,7 +163,7 @@ subscriptions model =
 
 startNextMatchIfPossible : ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
 startNextMatchIfPossible ( model, cmd ) =
-    if League.currentMatch model.league /= Nothing then
+    if League.currentMatch (History.current model.history) /= Nothing then
         -- there's a match already in progress; no need to overwrite it.
         ( model, cmd )
 
@@ -181,7 +171,7 @@ startNextMatchIfPossible ( model, cmd ) =
         ( model
         , Cmd.batch
             [ cmd
-            , Random.generate GotNextMatch (League.nextMatch model.league)
+            , Random.generate GotNextMatch (League.nextMatch (History.current model.history))
             ]
         )
 
@@ -233,7 +223,7 @@ view model =
 
 currentMatch : Model -> Html Msg
 currentMatch model =
-    case League.currentMatch model.league of
+    case League.currentMatch (History.current model.history) of
         Nothing ->
             Html.div
                 [ css
@@ -387,7 +377,9 @@ rankings : Model -> Html Msg
 rankings model =
     let
         previousStandings =
-            model.leagueBeforeLastMatch
+            History.goBack model.history
+                |> Maybe.map History.current
+                |> Maybe.withDefault (History.current model.history)
                 |> League.players
                 |> List.sortBy (\player -> -player.rating)
                 |> List.indexedMap (\rank player -> ( player.name, rank ))
@@ -439,7 +431,7 @@ rankings model =
                 , Css.lastChild [ Css.borderRightWidth Css.zero ]
                 ]
     in
-    model.league
+    History.current model.history
         |> League.players
         |> List.sortBy (\player -> -player.rating)
         |> List.indexedMap
@@ -450,7 +442,8 @@ rankings model =
                             |> Maybe.withDefault rank
 
                     isPlaying =
-                        League.currentMatch model.league
+                        History.current model.history
+                            |> League.currentMatch
                             |> Maybe.map (\(League.Match a b) -> player == a || player == b)
                             |> Maybe.withDefault False
                 in
