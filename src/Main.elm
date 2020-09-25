@@ -377,8 +377,7 @@ rankings : Model -> Html Msg
 rankings model =
     let
         previousStandings =
-            History.goBack model.history
-                |> Maybe.map History.current
+            History.peekBack model.history
                 |> Maybe.withDefault (History.current model.history)
                 |> League.players
                 |> List.sortBy (\player -> -player.rating)
