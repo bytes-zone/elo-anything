@@ -44,6 +44,8 @@ type Msg
     | KeeperWantsToSaveStandings
     | KeeperWantsToLoadStandings
     | SelectedStandingsFile File
+    | KeeperWantsToUndo
+    | KeeperWantsToRedo
     | LoadedLeague (Result String League)
     | IgnoredKey
 
@@ -82,7 +84,7 @@ update msg model =
                 |> startNextMatchIfPossible
 
         GotNextMatch (Just match) ->
-            ( { model | history = History.mapPush (League.startMatch match) model.history }
+            ( { model | history = History.mapInPlace (League.startMatch match) model.history }
             , Cmd.none
             )
 
@@ -121,6 +123,16 @@ update msg model =
                                 Task.fail (Decode.errorToString err)
                     )
                 |> Task.attempt LoadedLeague
+            )
+
+        KeeperWantsToUndo ->
+            ( { model | history = History.goBack model.history |> Maybe.withDefault model.history }
+            , Cmd.none
+            )
+
+        KeeperWantsToRedo ->
+            ( { model | history = History.goForward model.history |> Maybe.withDefault model.history }
+            , Cmd.none
             )
 
         LoadedLeague (Ok league) ->
@@ -211,8 +223,8 @@ view model =
                 , rankings model
                 , Html.section
                     [ css [ Css.textAlign Css.center, Css.marginTop (Css.px 32) ] ]
-                    [ blueButton "Save Standings" KeeperWantsToSaveStandings
-                    , blueButton "Load Standings" KeeperWantsToLoadStandings
+                    [ blueButton "Save Standings" (Just KeeperWantsToSaveStandings)
+                    , blueButton "Load Standings" (Just KeeperWantsToLoadStandings)
                     ]
                 ]
             ]
@@ -249,7 +261,7 @@ currentMatch model =
                         ]
                     ]
                     [ Html.text "No current match. To get started, add at least two players!" ]
-                , blueButton "Load Standings" KeeperWantsToLoadStandings
+                , blueButton "Load Standings" (Just KeeperWantsToLoadStandings)
                 ]
 
         Just (League.Match playerA playerB) ->
@@ -308,19 +320,29 @@ currentMatch model =
                     ]
                     [ Html.div
                         [ css [ Css.width (Css.pct 40) ] ]
-                        [ blueButton "Winner!" (MatchFinished (League.Win { lost = playerB, won = playerA })) ]
+                        [ blueButton "Winner!" (Just (MatchFinished (League.Win { lost = playerB, won = playerA }))) ]
                     , Html.div
                         [ css [ Css.width (Css.pct 20) ] ]
-                        [ blueButton "Tie!" (MatchFinished (League.Draw { playerA = playerA, playerB = playerB })) ]
+                        [ blueButton "Tie!" (Just (MatchFinished (League.Draw { playerA = playerA, playerB = playerB }))) ]
                     , Html.div
                         [ css [ Css.width (Css.pct 40) ] ]
-                        [ blueButton "Winner!" (MatchFinished (League.Win { won = playerB, lost = playerA })) ]
+                        [ blueButton "Winner!" (Just (MatchFinished (League.Win { won = playerB, lost = playerA }))) ]
+                    ]
+                , Html.div
+                    [ css
+                        [ Css.displayFlex
+                        , Css.padding4 (Css.px 32) (Css.pct 20) Css.zero (Css.pct 20)
+                        , Css.justifyContent Css.spaceAround
+                        ]
+                    ]
+                    [ blueButton "Undo" (Maybe.map (\_ -> KeeperWantsToUndo) (History.peekBack model.history))
+                    , blueButton "Redo" (Maybe.map (\_ -> KeeperWantsToRedo) (History.peekForward model.history))
                     ]
                 ]
 
 
-button : Css.Color -> String -> Msg -> Html Msg
-button baseColor label msg =
+button : Css.Color -> String -> Maybe Msg -> Html Msg
+button baseColor label maybeMsg =
     Html.button
         [ css
             [ Css.paddingTop (Css.px 6)
@@ -328,7 +350,12 @@ button baseColor label msg =
             , Css.paddingLeft (Css.px 15)
             , Css.paddingRight (Css.px 15)
             , Css.minWidth (Css.px 100)
-            , Css.backgroundColor baseColor
+            , case maybeMsg of
+                Just _ ->
+                    Css.backgroundColor baseColor
+
+                Nothing ->
+                    Css.backgroundColor (Css.hex "DDD")
             , Css.border Css.zero
             , Css.borderRadius (Css.px 4)
             , Css.boxShadow6 Css.inset Css.zero (Css.px -4) Css.zero Css.zero (Css.rgba 0 0 0 0.1)
@@ -339,22 +366,27 @@ button baseColor label msg =
             , Css.fontWeight (Css.int 600)
             , Css.color (Css.hex "FFF")
             ]
-        , Events.onClick msg
+        , case maybeMsg of
+            Just msg ->
+                Events.onClick msg
+
+            Nothing ->
+                Attributes.disabled True
         ]
         [ Html.text label ]
 
 
-blueButton : String -> Msg -> Html Msg
+blueButton : String -> Maybe Msg -> Html Msg
 blueButton =
     button (Css.hex "0091FF")
 
 
-greenButton : String -> Msg -> Html Msg
+greenButton : String -> Maybe Msg -> Html Msg
 greenButton =
     button (Css.hex "6DD400")
 
 
-redButton : String -> Msg -> Html Msg
+redButton : String -> Maybe Msg -> Html Msg
 redButton =
     button (Css.hex "E02020")
 
@@ -499,7 +531,7 @@ rankings model =
                         [ Html.text player.name ]
                     , Html.td
                         [ css [ textual, shrinkWidth, center ] ]
-                        [ redButton "Retire" (KeeperWantsToRetirePlayer player) ]
+                        [ redButton "Retire" (Just (KeeperWantsToRetirePlayer player)) ]
                     ]
                 )
             )
@@ -558,7 +590,7 @@ rankings model =
                                 ]
                             , Html.td
                                 [ css [ numeric, shrinkWidth, center ] ]
-                                [ greenButton "Add" KeeperWantsToAddNewPlayer ]
+                                [ greenButton "Add" (Just KeeperWantsToAddNewPlayer) ]
                             ]
                          )
                        ]

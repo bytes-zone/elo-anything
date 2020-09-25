@@ -1,4 +1,4 @@
-module History exposing (History, current, goBack, init, mapPush, peekBack, push)
+module History exposing (History, current, goBack, goForward, init, mapInPlace, mapPush, peekBack, peekForward, push)
 
 {-| -}
 
@@ -45,9 +45,19 @@ mapPush fn history =
     push (fn (current history)) history
 
 
+mapInPlace : (a -> a) -> History a -> History a
+mapInPlace fn (History guts) =
+    History { guts | current = fn guts.current }
+
+
 peekBack : History a -> Maybe a
 peekBack (History guts) =
     List.head guts.past
+
+
+peekForward : History a -> Maybe a
+peekForward (History guts) =
+    List.head guts.future
 
 
 goBack : History a -> Maybe (History a)
@@ -59,6 +69,21 @@ goBack (History guts) =
                     | past = rest
                     , current = mostRecent
                     , future = guts.current :: guts.future
+                }
+
+        [] ->
+            Nothing
+
+
+goForward : History a -> Maybe (History a)
+goForward (History guts) =
+    case guts.future of
+        nextRecent :: rest ->
+            (Just << History)
+                { guts
+                    | past = guts.current :: guts.past
+                    , current = nextRecent
+                    , future = rest
                 }
 
         [] ->
