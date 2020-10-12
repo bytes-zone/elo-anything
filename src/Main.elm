@@ -162,7 +162,7 @@ subscriptions model =
                         Just Keyboard.ArrowRight ->
                             MatchFinished (League.Win { won = right, lost = left })
 
-                        Just Keyboard.ArrowDown ->
+                        Just Keyboard.ArrowUp ->
                             MatchFinished (League.Draw { playerA = left, playerB = right })
 
                         _ ->
