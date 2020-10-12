@@ -93,18 +93,15 @@ getPlayer name (League league) =
 addPlayer : Player -> League -> League
 addPlayer player (League league) =
     let
-        ratings =
-            Dict.values league.players
-                |> List.map .rating
-                |> List.sort
+        initialRating =
+            case Dict.values league.players |> List.map .rating of
+                [] ->
+                    Elo.initialRating
 
-        medianishRating =
-            ratings
-                |> List.drop (List.length ratings // 2)
-                |> List.head
-                |> Maybe.withDefault Elo.initialRating
+                nonEmpty ->
+                    List.sum nonEmpty // List.length nonEmpty
     in
-    League { league | players = Dict.insert player.name (Player.setRating medianishRating player) league.players }
+    League { league | players = Dict.insert player.name (Player.setRating initialRating player) league.players }
 
 
 {-| -}
