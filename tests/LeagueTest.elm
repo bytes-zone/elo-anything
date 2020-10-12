@@ -60,7 +60,8 @@ playersTests =
                 League.init
                     |> League.addPlayer player
                     |> League.players
-                    |> Expect.equal [ player ]
+                    |> List.map .name
+                    |> Expect.equal [ player.name ]
         , fuzz playerFuzzer "retiring a player removes them from the players list" <|
             \player ->
                 League.init
@@ -109,7 +110,8 @@ startMatchTests =
                     |> League.addPlayer playerB
                     |> League.startMatch (Match playerA playerB)
                     |> League.currentMatch
-                    |> Expect.equal (Just (Match playerA playerB))
+                    |> Maybe.map (\(Match a b) -> ( a.name, b.name ))
+                    |> Expect.equal (Just ( playerA.name, playerB.name ))
         , fuzz playerFuzzer "you can't start a match with one player against themselves" <|
             \player ->
                 League.init

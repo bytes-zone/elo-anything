@@ -92,13 +92,25 @@ getPlayer name (League league) =
 
 addPlayer : Player -> League -> League
 addPlayer player (League league) =
-    League { league | players = Dict.insert player.name player league.players }
+    let
+        ratings =
+            Dict.values league.players
+                |> List.map .rating
+                |> List.sort
+
+        medianishRating =
+            ratings
+                |> List.drop (List.length ratings // 2)
+                |> List.head
+                |> Maybe.withDefault Elo.initialRating
+    in
+    League { league | players = Dict.insert player.name (Player.setRating medianishRating player) league.players }
 
 
 {-| -}
 updatePlayer : Player -> League -> League
-updatePlayer =
-    addPlayer
+updatePlayer player (League league) =
+    League { league | players = Dict.insert player.name player league.players }
 
 
 retirePlayer : Player -> League -> League
