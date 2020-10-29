@@ -163,30 +163,23 @@ nextMatch (League league) =
     case allPlayers of
         -- at least two
         a :: b :: rest ->
-            (case List.filter (\player -> player.matches <= playInMatches) allPlayers of
-                firstPlayIn :: restOfPlayIns ->
-                    let
-                        mostPlayed =
-                            (firstPlayIn :: restOfPlayIns)
-                                |> List.map .matches
-                                |> List.maximum
-                                |> Maybe.withDefault firstPlayIn.matches
-                    in
-                    Random.weighted
-                        ( toFloat (mostPlayed - firstPlayIn.matches), firstPlayIn )
-                        (List.map (\player -> ( toFloat (mostPlayed - player.matches), player )) restOfPlayIns)
+            let
+                ( firstPossiblePlayer, restOfPossiblePlayers ) =
+                    case List.filter (\player -> player.matches <= playInMatches) allPlayers of
+                        [] ->
+                            ( a, b :: rest )
 
-                _ ->
-                    let
-                        mostMatches =
-                            List.map .matches allPlayers
-                                |> List.maximum
-                                |> Maybe.withDefault 0
-                    in
-                    Random.weighted
-                        ( toFloat (mostMatches - a.matches) ^ 2, a )
-                        (List.map (\player -> ( toFloat (mostMatches - a.matches) ^ 2, player )) (b :: rest))
-            )
+                        firstPlayIn :: restOfPlayIns ->
+                            ( firstPlayIn, restOfPlayIns )
+
+                mostMatchesAmongPossiblePlayers =
+                    List.map .matches (firstPossiblePlayer :: restOfPossiblePlayers)
+                        |> List.maximum
+                        |> Maybe.withDefault firstPossiblePlayer.matches
+            in
+            Random.weighted
+                ( toFloat (mostMatchesAmongPossiblePlayers - firstPossiblePlayer.matches) ^ 2, firstPossiblePlayer )
+                (List.map (\player -> ( toFloat (mostMatchesAmongPossiblePlayers - player.matches) ^ 2, player )) restOfPossiblePlayers)
                 |> Random.andThen
                     (\firstPlayer ->
                         let
