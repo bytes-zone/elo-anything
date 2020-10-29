@@ -142,9 +142,9 @@ currentMatch (League league) =
 
 1.  If there are players who have less than the "play-in" number of matches
     (that is, the number of matches I feel are needed to get a good idea of
-    the player's rough ranking) then choose among them randomly. If there
-    are no such players then choose among all the players, favoring players
-    who have played less recently.
+    the player's rough ranking) then choose among them randomly, favoring
+    those who have played least. If there are no such players then choose
+    among all the players, favoring players who have played less recently.
 
 2.  Once the first player is chosen, choose a second player close to them
     by rank. The ideal matchup goes from a tie to a decisive "this player
@@ -165,7 +165,16 @@ nextMatch (League league) =
         a :: b :: rest ->
             (case List.filter (\player -> player.matches <= playInMatches) allPlayers of
                 firstPlayIn :: restOfPlayIns ->
-                    Random.uniform firstPlayIn restOfPlayIns
+                    let
+                        mostPlayed =
+                            (firstPlayIn :: restOfPlayIns)
+                                |> List.map .matches
+                                |> List.maximum
+                                |> Maybe.withDefault firstPlayIn.matches
+                    in
+                    Random.weighted
+                        ( toFloat (mostPlayed - firstPlayIn.matches), firstPlayIn )
+                        (List.map (\player -> ( toFloat (mostPlayed - player.matches), player )) restOfPlayIns)
 
                 _ ->
                     let
