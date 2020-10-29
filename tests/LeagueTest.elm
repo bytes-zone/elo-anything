@@ -152,7 +152,7 @@ finishMatchTests =
                 \winner ->
                     let
                         newRatings =
-                            Elo.win (League.kFactor winner)
+                            Elo.win (League.kFactor league winner)
                                 { won = winner.rating
                                 , lost = dummy.rating
                                 }
@@ -200,7 +200,7 @@ finishMatchTests =
                     let
                         newRatings =
                             Elo.draw
-                                (League.kFactor
+                                (League.kFactor league
                                     (if player.rating > dummy.rating then
                                         player
 

@@ -16,6 +16,7 @@ module League exposing
 
 import Dict exposing (Dict)
 import Elo
+import FStatistics
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Player exposing (Player)
@@ -256,7 +257,7 @@ finishMatch outcome league =
         Win { won, lost } ->
             let
                 newRatings =
-                    Elo.win (kFactor won)
+                    Elo.win (kFactor league won)
                         { won = won.rating
                         , lost = lost.rating
                         }
@@ -269,7 +270,7 @@ finishMatch outcome league =
         Draw { playerA, playerB } ->
             let
                 newRatings =
-                    Elo.draw (kFactor (higherRankedPlayer playerA playerB))
+                    Elo.draw (kFactor league (higherRankedPlayer playerA playerB))
                         { playerA = playerA.rating
                         , playerB = playerB.rating
                         }
@@ -286,29 +287,30 @@ playInMatches =
     5
 
 
-{-| Thought: long-term, it may be better to say the 90th percentile of
-competitors gets the insensitive k-factor instead of defining a cutoff.
--}
-kFactor : Player -> Int
-kFactor player =
+{-| -}
+kFactor : League -> Player -> Int
+kFactor (League league) player =
+    let
+        p90 =
+            Dict.values league.players
+                |> List.map .rating
+                |> FStatistics.percentileInt 0.9
+                |> Maybe.withDefault Elo.initialRating
+    in
     if player.matches < playInMatches then
         -- players who are new to the league should move around more so that
         -- they can get ranked closer to their actual correct position sooner.
         Elo.sensitiveKFactor * 2
 
-    else if player.rating <= round (toFloat Elo.initialRating * 1.1) then
-        -- players who have been around a while should still be able to easily
-        -- move up in the rankings if it turns out they've been consistently
-        -- underrated.
-        --
-        -- The threshold here may seem a little low here but it's only 4 of
-        -- the 47 items in the list I use elo-anything for.
-        Elo.sensitiveKFactor
+    else if player.rating >= p90 then
+        -- players who have been at the top of the rankings for a while should
+        -- be stabler. In my use case, I'm picking things to do next. The
+        -- "most important" thing to do next doesn't actually change a lot,
+        -- and the algorithm should reflect that.
+        Elo.sensitiveKFactor // 2
 
     else
-        -- players who are at the top of the ratings should be relatively
-        -- stable.
-        Elo.sensitiveKFactor // 2
+        Elo.sensitiveKFactor
 
 
 {-| -}
