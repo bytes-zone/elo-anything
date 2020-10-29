@@ -16,7 +16,6 @@ module League exposing
 
 import Dict exposing (Dict)
 import Elo
-import FStatistics
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Player exposing (Player)
@@ -294,7 +293,7 @@ kFactor (League league) player =
         p90 =
             Dict.values league.players
                 |> List.map .rating
-                |> FStatistics.percentileInt 0.9
+                |> percentile 0.9
                 |> Maybe.withDefault Elo.initialRating
     in
     if player.matches < playInMatches then
@@ -311,6 +310,44 @@ kFactor (League league) player =
 
     else
         Elo.sensitiveKFactor
+
+
+{-| Not 100% correct because of the rounding but good enough for our
+purposes.
+-}
+percentile : Float -> List Int -> Maybe Int
+percentile pct items =
+    let
+        sorted =
+            List.sort items
+
+        offset =
+            pct * toFloat (List.length items)
+
+        index =
+            floor offset
+    in
+    if toFloat index == offset then
+        sorted
+            |> List.drop (index - 1)
+            |> List.head
+
+    else
+        let
+            fractionalPart =
+                offset - toFloat index
+
+            betweenThese =
+                sorted
+                    |> List.drop (index - 1)
+                    |> List.take 2
+        in
+        case betweenThese of
+            [ a, b ] ->
+                Just (round (toFloat a + fractionalPart * (toFloat b - toFloat a)))
+
+            _ ->
+                Nothing
 
 
 {-| -}
