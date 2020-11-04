@@ -3,7 +3,7 @@ let
   sources = import nix/sources.nix;
   pkgs = import sources.nixpkgs { };
   gitignore = import sources.gitignore { };
-in {
+in rec {
   elo-anything = pkgs.stdenv.mkDerivation {
     name = "elo-anything";
     src = gitignore.gitignoreSource ./.;
@@ -25,5 +25,17 @@ in {
       mkdir -p $out/share/
       mv dist $out/share/elo-anything
     '';
+  };
+
+  container = let
+    linuxPkgs = import sources.nixpkgs { system = "x86_64-linux"; };
+    listenPort = "80";
+  in linuxPkgs.dockerTools.buildLayeredImage {
+    name = "elo-anything";
+    contents = linuxPkgs.darkhttpd;
+    config = {
+      Cmd = [ "darkhttpd" "${elo-anything}/share/elo-anything" ];
+      ExposedPorts = { "${listenPort}/tcp" = { }; };
+    };
   };
 }
