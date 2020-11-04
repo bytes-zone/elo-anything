@@ -1,14 +1,14 @@
 { ... }:
 let
   sources = import nix/sources.nix;
-  nixpkgs = import sources.nixpkgs { };
+  pkgs = import sources.nixpkgs { };
   gitignore = import sources.gitignore { };
-in with nixpkgs; {
-  elo-anything = stdenv.mkDerivation {
+in {
+  elo-anything = pkgs.stdenv.mkDerivation {
     name = "elo-anything";
     src = gitignore.gitignoreSource ./.;
 
-    buildInputs = [ elmPackages.elm elmPackages.elm-test ];
+    buildInputs = [ pkgs.elmPackages.elm pkgs.elmPackages.elm-test ];
     buildPhase = pkgs.elmPackages.fetchElmDeps {
       elmPackages = import ./nix/elm-srcs.nix;
       elmVersion = "0.19.1";
