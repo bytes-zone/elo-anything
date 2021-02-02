@@ -349,6 +349,7 @@ button baseColor label maybeMsg =
             , Css.paddingBottom (Css.px 10)
             , Css.paddingLeft (Css.px 15)
             , Css.paddingRight (Css.px 15)
+            , Css.margin2 Css.zero (Css.px 10)
             , Css.minWidth (Css.px 100)
             , case maybeMsg of
                 Just _ ->
