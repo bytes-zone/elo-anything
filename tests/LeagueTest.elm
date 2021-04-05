@@ -39,7 +39,7 @@ decoderTests =
         , fuzz leagueFuzzer "is backwards-compatible with the older dictionary format" <|
             \league ->
                 League.players league
-                    |> List.map (\player -> ( player.name, Player.encode player ))
+                    |> List.map (\player -> ( Player.name player, Player.encode player ))
                     |> Encode.object
                     |> Decode.decodeValue League.decoder
                     -- matches played will change with this. That's fine.
@@ -60,8 +60,8 @@ playersTests =
                 League.init
                     |> League.addPlayer player
                     |> League.players
-                    |> List.map .name
-                    |> Expect.equal [ player.name ]
+                    |> List.map Player.name
+                    |> Expect.equal [ Player.name player ]
         , fuzz playerFuzzer "retiring a player removes them from the players list" <|
             \player ->
                 League.init
@@ -89,10 +89,10 @@ startMatchTests =
             \playerA playerB ->
                 let
                     uniqueA =
-                        Player.init ("real " ++ playerA.name)
+                        Player.init ("real " ++ Player.name playerA)
 
                     uniqueB =
-                        Player.init ("real " ++ playerA.name)
+                        Player.init ("real " ++ Player.name playerA)
                 in
                 League.init
                     |> League.addPlayer uniqueA
@@ -103,15 +103,15 @@ startMatchTests =
             \playerA playerBMaybeSame ->
                 let
                     playerB =
-                        Player.init ("unique " ++ playerBMaybeSame.name)
+                        Player.init ("unique " ++ Player.name playerBMaybeSame)
                 in
                 League.init
                     |> League.addPlayer playerA
                     |> League.addPlayer playerB
                     |> League.startMatch (Match playerA playerB)
                     |> League.currentMatch
-                    |> Maybe.map (\(Match a b) -> ( a.name, b.name ))
-                    |> Expect.equal (Just ( playerA.name, playerB.name ))
+                    |> Maybe.map (\(Match a b) -> ( Player.name a, Player.name b ))
+                    |> Expect.equal (Just ( Player.name playerA, Player.name playerB ))
         , fuzz playerFuzzer "you can't start a match with one player against themselves" <|
             \player ->
                 League.init
@@ -141,20 +141,20 @@ finishMatchTests =
                         |> League.startMatch (Match winner existingPlayer)
                         |> League.finishMatch (Win { won = winner, lost = existingPlayer })
                         |> Expect.all
-                            [ League.getPlayer winner.id
-                                >> Maybe.map .matches
-                                >> Expect.equal (Just (winner.matches + 1))
-                            , League.getPlayer existingPlayer.id
-                                >> Maybe.map .matches
-                                >> Expect.equal (Just (existingPlayer.matches + 1))
+                            [ League.getPlayer (Player.id winner)
+                                >> Maybe.map Player.matchesPlayed
+                                >> Expect.equal (Just (Player.matchesPlayed winner + 1))
+                            , League.getPlayer (Player.id existingPlayer)
+                                >> Maybe.map Player.matchesPlayed
+                                >> Expect.equal (Just (Player.matchesPlayed existingPlayer + 1))
                             ]
             , fuzz playerFuzzer "changes ratings according to Elo" <|
                 \winner ->
                     let
                         newRatings =
                             Elo.win (League.kFactor league winner)
-                                { won = winner.rating
-                                , lost = existingPlayer.rating
+                                { won = Player.rating winner
+                                , lost = Player.rating existingPlayer
                                 }
                     in
                     league
@@ -162,11 +162,11 @@ finishMatchTests =
                         |> League.startMatch (Match winner existingPlayer)
                         |> League.finishMatch (Win { won = winner, lost = existingPlayer })
                         |> Expect.all
-                            [ League.getPlayer winner.id
-                                >> Maybe.map .rating
+                            [ League.getPlayer (Player.id winner)
+                                >> Maybe.map Player.rating
                                 >> Expect.equal (Just newRatings.won)
-                            , League.getPlayer existingPlayer.id
-                                >> Maybe.map .rating
+                            , League.getPlayer (Player.id existingPlayer)
+                                >> Maybe.map Player.rating
                                 >> Expect.equal (Just newRatings.lost)
                             ]
             , fuzz playerFuzzer "does not change the total points in the system" <|
@@ -176,9 +176,9 @@ finishMatchTests =
                         |> League.startMatch (Match winner existingPlayer)
                         |> League.finishMatch (Win { won = winner, lost = existingPlayer })
                         |> League.players
-                        |> List.map .rating
+                        |> List.map Player.rating
                         |> List.sum
-                        |> Expect.equal (winner.rating + existingPlayer.rating)
+                        |> Expect.equal (Player.rating winner + Player.rating existingPlayer)
             ]
         , describe "a draw"
             [ fuzz playerFuzzer "a draw causes both players matches played to go up" <|
@@ -188,12 +188,12 @@ finishMatchTests =
                         |> League.startMatch (Match player existingPlayer)
                         |> League.finishMatch (Draw { playerA = player, playerB = existingPlayer })
                         |> Expect.all
-                            [ League.getPlayer player.id
-                                >> Maybe.map .matches
-                                >> Expect.equal (Just (player.matches + 1))
-                            , League.getPlayer existingPlayer.id
-                                >> Maybe.map .matches
-                                >> Expect.equal (Just (existingPlayer.matches + 1))
+                            [ League.getPlayer (Player.id player)
+                                >> Maybe.map Player.matchesPlayed
+                                >> Expect.equal (Just (Player.matchesPlayed player + 1))
+                            , League.getPlayer (Player.id existingPlayer)
+                                >> Maybe.map Player.matchesPlayed
+                                >> Expect.equal (Just (Player.matchesPlayed existingPlayer + 1))
                             ]
             , fuzz playerFuzzer "a draw changes ratings according to Elo" <|
                 \player ->
@@ -201,15 +201,15 @@ finishMatchTests =
                         newRatings =
                             Elo.draw
                                 (League.kFactor league
-                                    (if player.rating > existingPlayer.rating then
+                                    (if Player.rating player > Player.rating existingPlayer then
                                         player
 
                                      else
                                         existingPlayer
                                     )
                                 )
-                                { playerA = player.rating
-                                , playerB = existingPlayer.rating
+                                { playerA = Player.rating player
+                                , playerB = Player.rating existingPlayer
                                 }
                     in
                     league
@@ -217,11 +217,11 @@ finishMatchTests =
                         |> League.startMatch (Match player existingPlayer)
                         |> League.finishMatch (Draw { playerA = player, playerB = existingPlayer })
                         |> Expect.all
-                            [ League.getPlayer player.id
-                                >> Maybe.map .rating
+                            [ League.getPlayer (Player.id player)
+                                >> Maybe.map Player.rating
                                 >> Expect.equal (Just newRatings.playerA)
-                            , League.getPlayer existingPlayer.id
-                                >> Maybe.map .rating
+                            , League.getPlayer (Player.id existingPlayer)
+                                >> Maybe.map Player.rating
                                 >> Expect.equal (Just newRatings.playerB)
                             ]
             , fuzz playerFuzzer "a draw does not change the total points in the system" <|
@@ -231,9 +231,9 @@ finishMatchTests =
                         |> League.startMatch (Match player existingPlayer)
                         |> League.finishMatch (Draw { playerA = player, playerB = existingPlayer })
                         |> League.players
-                        |> List.map .rating
+                        |> List.map Player.rating
                         |> List.sum
-                        |> Expect.equal (player.rating + existingPlayer.rating)
+                        |> Expect.equal (Player.rating player + Player.rating existingPlayer)
             ]
         ]
 

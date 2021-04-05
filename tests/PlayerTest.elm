@@ -22,11 +22,9 @@ playerFuzzer : Fuzzer Player
 playerFuzzer =
     Fuzz.map3
         (\name rating matches ->
-            let
-                initial =
-                    Player.init name
-            in
-            { initial | rating = rating, matches = matches }
+            Player.init name
+                |> Player.setRating rating
+                |> Player.setMatchesPlayed matches
         )
         nameFuzzer
         (Fuzz.intRange 1000 3000)
@@ -44,7 +42,7 @@ decoderTest : Test
 decoderTest =
     describe "decoder"
         [ describe "id"
-            [ test "fills in the ID if it's missing" <|
+            [ test "is OK with a missing ID" <|
                 \_ ->
                     Encode.object
                         [ ( "name", Encode.string "Test" )
@@ -52,7 +50,6 @@ decoderTest =
                         , ( "matches", Encode.int 0 )
                         ]
                         |> Decode.decodeValue Player.decoder
-                        |> Result.map .id
-                        |> Expect.equal (Ok (Player.playerIdFromIntForTestOnly 123038886))
+                        |> Expect.ok
             ]
         ]

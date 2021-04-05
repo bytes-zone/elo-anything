@@ -60,7 +60,7 @@ decoder =
             , -- old format: only players as a dict
               Decode.dict Player.decoder
                 |> Decode.map ComparableDict.toList
-                |> Decode.map (List.map (\( _, player ) -> ( player.id, player )))
+                |> Decode.map (List.map (\( _, player ) -> ( Player.id player, player )))
                 |> Decode.map (Dict.fromList Player.idSorter)
             ]
         )
@@ -69,7 +69,7 @@ decoder =
 playersDecoder : Decoder (Dict PlayerId Player)
 playersDecoder =
     Decode.field "players" (Decode.list Player.decoder)
-        |> Decode.map (List.map (\player -> ( player.id, player )))
+        |> Decode.map (List.map (\player -> ( Player.id player, player )))
         |> Decode.map (Dict.fromList Player.idSorter)
 
 
@@ -98,34 +98,34 @@ addPlayer : Player -> League -> League
 addPlayer player (League league) =
     let
         initialRating =
-            case Dict.values league.players |> List.map .rating of
+            case Dict.values league.players |> List.map Player.rating of
                 [] ->
                     Elo.initialRating
 
                 nonEmpty ->
                     List.sum nonEmpty // List.length nonEmpty
     in
-    League { league | players = Dict.insert player.id (Player.setRating initialRating player) league.players }
+    League { league | players = Dict.insert (Player.id player) (Player.setRating initialRating player) league.players }
 
 
 {-| -}
 updatePlayer : Player -> League -> League
 updatePlayer player (League league) =
-    League { league | players = Dict.insert player.id player league.players }
+    League { league | players = Dict.insert (Player.id player) player league.players }
 
 
 retirePlayer : Player -> League -> League
 retirePlayer player (League league) =
     League
         { league
-            | players = Dict.remove player.id league.players
+            | players = Dict.remove (Player.id player) league.players
             , currentMatch =
                 case league.currentMatch of
                     Nothing ->
                         Nothing
 
                     Just (Match a b) ->
-                        if player.name == a.name || player.name == b.name then
+                        if Player.id player == Player.id a || Player.id player == Player.id b then
                             Nothing
 
                         else
@@ -169,7 +169,7 @@ nextMatch (League league) =
         a :: b :: rest ->
             let
                 ( firstPossiblePlayer, restOfPossiblePlayers ) =
-                    case List.filter (\player -> player.matches <= playInMatches) allPlayers of
+                    case List.filter (\player -> Player.matchesPlayed player <= playInMatches) allPlayers of
                         [] ->
                             ( a, b :: rest )
 
@@ -177,13 +177,13 @@ nextMatch (League league) =
                             ( firstPlayIn, restOfPlayIns )
 
                 mostMatchesAmongPossiblePlayers =
-                    List.map .matches (firstPossiblePlayer :: restOfPossiblePlayers)
+                    List.map Player.matchesPlayed (firstPossiblePlayer :: restOfPossiblePlayers)
                         |> List.maximum
-                        |> Maybe.withDefault firstPossiblePlayer.matches
+                        |> Maybe.withDefault (Player.matchesPlayed firstPossiblePlayer)
             in
             Random.weighted
-                ( toFloat (mostMatchesAmongPossiblePlayers - firstPossiblePlayer.matches) ^ 2, firstPossiblePlayer )
-                (List.map (\player -> ( toFloat (mostMatchesAmongPossiblePlayers - player.matches) ^ 2, player )) restOfPossiblePlayers)
+                ( toFloat (mostMatchesAmongPossiblePlayers - Player.matchesPlayed firstPossiblePlayer) ^ 2, firstPossiblePlayer )
+                (List.map (\player -> ( toFloat (mostMatchesAmongPossiblePlayers - Player.matchesPlayed player) ^ 2, player )) restOfPossiblePlayers)
                 |> Random.andThen
                     (\firstPlayer ->
                         let
@@ -199,13 +199,13 @@ nextMatch (League league) =
 
                             furthestAway =
                                 (head :: tail)
-                                    |> List.map (\player -> abs (firstPlayer.rating - player.rating))
+                                    |> List.map (\player -> abs (Player.rating firstPlayer - Player.rating player))
                                     |> List.maximum
                                     |> Maybe.withDefault 0
                         in
                         Random.weighted
-                            ( toFloat (furthestAway - abs (firstPlayer.rating - head.rating)) ^ 2, head )
-                            (List.map (\player -> ( toFloat (furthestAway - abs (firstPlayer.rating - player.rating)) ^ 2, player )) tail)
+                            ( toFloat (furthestAway - abs (Player.rating firstPlayer - Player.rating head)) ^ 2, head )
+                            (List.map (\player -> ( toFloat (furthestAway - abs (Player.rating firstPlayer - Player.rating player)) ^ 2, player )) tail)
                             |> Random.map (Tuple.pair firstPlayer)
                     )
                 |> Random.andThen
@@ -235,8 +235,8 @@ startMatch (Match playerA playerB) (League league) =
                 -- don't start a match with players that aren't in the
                 -- league...
                 Maybe.map2 Tuple.pair
-                    (Dict.get playerA.id league.players)
-                    (Dict.get playerB.id league.players)
+                    (Dict.get (Player.id playerA) league.players)
+                    (Dict.get (Player.id playerB) league.players)
                     |> Maybe.andThen
                         (\( gotA, gotB ) ->
                             -- ... or when the players are the same player
@@ -261,8 +261,8 @@ finishMatch outcome league =
             let
                 newRatings =
                     Elo.win (kFactor league won)
-                        { won = won.rating
-                        , lost = lost.rating
+                        { won = Player.rating won
+                        , lost = Player.rating lost
                         }
             in
             league
@@ -274,8 +274,8 @@ finishMatch outcome league =
             let
                 newRatings =
                     Elo.draw (kFactor league (higherRankedPlayer playerA playerB))
-                        { playerA = playerA.rating
-                        , playerB = playerB.rating
+                        { playerA = Player.rating playerA
+                        , playerB = Player.rating playerB
                         }
             in
             league
@@ -296,16 +296,16 @@ kFactor (League league) player =
     let
         p90 =
             Dict.values league.players
-                |> List.map .rating
+                |> List.map Player.rating
                 |> percentile 0.9
                 |> Maybe.withDefault Elo.initialRating
     in
-    if player.matches < playInMatches then
+    if Player.matchesPlayed player < playInMatches then
         -- players who are new to the league should move around more so that
         -- they can get ranked closer to their actual correct position sooner.
         Elo.sensitiveKFactor * 2
 
-    else if player.rating >= p90 then
+    else if Player.rating player >= p90 then
         -- players who have been at the top of the rankings for a while should
         -- be stabler. In my use case, I'm picking things to do next. The
         -- "most important" thing to do next doesn't actually change a lot,
@@ -357,7 +357,7 @@ percentile pct items =
 {-| -}
 higherRankedPlayer : Player -> Player -> Player
 higherRankedPlayer a b =
-    if a.rating > b.rating then
+    if Player.rating a > Player.rating b then
         a
 
     else
