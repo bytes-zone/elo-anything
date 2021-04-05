@@ -3,7 +3,7 @@ module Player exposing
     , PlayerId, id, idSorter
     , name
     , rating, setRating
-    , matchesPlayed, setMatchesPlayed, incrementMatchesPlayed
+    , matchesPlayed, setMatchesPlayedTestOnly, incrementMatchesPlayed
     , encode
     , decoder
     )
@@ -18,7 +18,7 @@ module Player exposing
 
 @docs rating, setRating
 
-@docs matchesPlayed, setMatchesPlayed, incrementMatchesPlayed
+@docs matchesPlayed, setMatchesPlayedTestOnly, incrementMatchesPlayed
 
 @docs encode, decode
 
@@ -88,7 +88,7 @@ rating (Player player) =
 
 setRating : Int -> Player -> Player
 setRating rating_ (Player player) =
-    Player { player | rating = rating_ }
+    Player { player | rating = max 0 rating_ }
 
 
 
@@ -100,8 +100,8 @@ matchesPlayed (Player player) =
     player.matches
 
 
-setMatchesPlayed : Int -> Player -> Player
-setMatchesPlayed matches (Player player) =
+setMatchesPlayedTestOnly : Int -> Player -> Player
+setMatchesPlayedTestOnly matches (Player player) =
     Player { player | matches = matches }
 
 

@@ -1,5 +1,6 @@
 module PlayerTest exposing (..)
 
+import Elo
 import Expect
 import Fuzz exposing (Fuzzer)
 import Json.Decode as Decode
@@ -33,13 +34,64 @@ interopTest =
         ]
 
 
+nameTest : Test
+nameTest =
+    describe "name"
+        [ test "you get the same name out as you put in" <|
+            \_ ->
+                Player.init "Babaganoush"
+                    |> Player.name
+                    |> Expect.equal "Babaganoush"
+        ]
+
+
+matchesTest : Test
+matchesTest =
+    describe "matches"
+        [ test "you start off having played zero matches" <|
+            \_ ->
+                Player.init "Pita"
+                    |> Player.matchesPlayed
+                    |> Expect.equal 0
+        , test "when you play a match, you can see it" <|
+            \_ ->
+                Player.init "Pita"
+                    |> Player.incrementMatchesPlayed
+                    |> Player.matchesPlayed
+                    |> Expect.equal 1
+        ]
+
+
+ratingTest : Test
+ratingTest =
+    describe "rating"
+        [ test "you start off at the default Elo rating" <|
+            \_ ->
+                Player.init "Shish Taouk"
+                    |> Player.rating
+                    |> Expect.equal Elo.initialRating
+        , fuzz (Fuzz.intRange 0 (Elo.initialRating * 2)) "your rating can be set to whatever" <|
+            \rating ->
+                Player.init "Shish Taouk"
+                    |> Player.setRating rating
+                    |> Player.rating
+                    |> Expect.equal rating
+        , test "your rating cannot go below zero" <|
+            \_ ->
+                Player.init "Shish Taouk"
+                    |> Player.setRating -1
+                    |> Player.rating
+                    |> Expect.equal 0
+        ]
+
+
 playerFuzzer : Fuzzer Player
 playerFuzzer =
     Fuzz.map3
         (\name rating matches ->
             Player.init name
                 |> Player.setRating rating
-                |> Player.setMatchesPlayed matches
+                |> Player.setMatchesPlayedTestOnly matches
         )
         nameFuzzer
         (Fuzz.intRange 1000 3000)
