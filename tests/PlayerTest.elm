@@ -20,10 +20,13 @@ roundTripDecoderTest =
 
 playerFuzzer : Fuzzer Player
 playerFuzzer =
-    Fuzz.map4 Player
-        (nameFuzzer
-            |> Fuzz.map (Murmur3.hashString 0)
-            |> Fuzz.map Player.playerIdFromIntForTestOnly
+    Fuzz.map3
+        (\name rating matches ->
+            let
+                initial =
+                    Player.init name
+            in
+            { initial | rating = rating, matches = matches }
         )
         nameFuzzer
         (Fuzz.intRange 1000 3000)
