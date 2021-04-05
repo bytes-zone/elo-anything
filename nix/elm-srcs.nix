@@ -5,6 +5,11 @@
         version = "1.0.5";
       };
 
+      "rtfeldman/elm-sorter-experiment" = {
+        sha256 = "1vvvsg2axss25f7ilwk2pyhznv026bq3kj2fr8h2107g1lbgyabq";
+        version = "2.1.1";
+      };
+
       "elm/json" = {
         sha256 = "0kjwrz195z84kwywaxhhlnpl3p251qlbm5iz6byd6jky2crmyqyh";
         version = "1.1.3";
