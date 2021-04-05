@@ -1,9 +1,10 @@
-module Player exposing (Player, PlayerId, decoder, encode, incrementMatchesPlayed, init, playerIdFromIntForTestOnly, setRating)
+module Player exposing (Player, PlayerId, decoder, encode, idSorter, incrementMatchesPlayed, init, playerIdFromIntForTestOnly, setRating)
 
 import Elo
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Murmur3
+import Sort exposing (Sorter)
 
 
 type PlayerId
@@ -13,6 +14,11 @@ type PlayerId
 playerIdFromIntForTestOnly : Int -> PlayerId
 playerIdFromIntForTestOnly =
     PlayerId
+
+
+idSorter : Sorter PlayerId
+idSorter =
+    Sort.by (\(PlayerId id) -> id) Sort.increasing
 
 
 type alias Player =

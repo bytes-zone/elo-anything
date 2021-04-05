@@ -14,17 +14,18 @@ module League exposing
 
 -}
 
-import Dict exposing (Dict)
+import Dict as ComparableDict
 import Elo
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Player exposing (Player)
+import Player exposing (Player, PlayerId)
 import Random exposing (Generator)
+import Sort.Dict as Dict exposing (Dict)
 
 
 type League
     = League
-        { players : Dict String Player
+        { players : Dict PlayerId Player
         , currentMatch : Maybe Match
         }
 
@@ -40,7 +41,7 @@ type Match
 init : League
 init =
     League
-        { players = Dict.empty
+        { players = Dict.empty Player.idSorter
         , currentMatch = Nothing
         }
 
@@ -58,15 +59,18 @@ decoder =
             [ playersDecoder
             , -- old format: only players as a dict
               Decode.dict Player.decoder
+                |> Decode.map ComparableDict.toList
+                |> Decode.map (List.map (\( _, player ) -> ( player.id, player )))
+                |> Decode.map (Dict.fromList Player.idSorter)
             ]
         )
 
 
-playersDecoder : Decoder (Dict String Player)
+playersDecoder : Decoder (Dict PlayerId Player)
 playersDecoder =
     Decode.field "players" (Decode.list Player.decoder)
-        |> Decode.map (List.map (\player -> ( player.name, player )))
-        |> Decode.map Dict.fromList
+        |> Decode.map (List.map (\player -> ( player.id, player )))
+        |> Decode.map (Dict.fromList Player.idSorter)
 
 
 encode : League -> Encode.Value
@@ -85,9 +89,9 @@ players (League league) =
     Dict.values league.players
 
 
-getPlayer : String -> League -> Maybe Player
-getPlayer name (League league) =
-    Dict.get name league.players
+getPlayer : PlayerId -> League -> Maybe Player
+getPlayer id (League league) =
+    Dict.get id league.players
 
 
 addPlayer : Player -> League -> League
@@ -101,20 +105,20 @@ addPlayer player (League league) =
                 nonEmpty ->
                     List.sum nonEmpty // List.length nonEmpty
     in
-    League { league | players = Dict.insert player.name (Player.setRating initialRating player) league.players }
+    League { league | players = Dict.insert player.id (Player.setRating initialRating player) league.players }
 
 
 {-| -}
 updatePlayer : Player -> League -> League
 updatePlayer player (League league) =
-    League { league | players = Dict.insert player.name player league.players }
+    League { league | players = Dict.insert player.id player league.players }
 
 
 retirePlayer : Player -> League -> League
 retirePlayer player (League league) =
     League
         { league
-            | players = Dict.remove player.name league.players
+            | players = Dict.remove player.id league.players
             , currentMatch =
                 case league.currentMatch of
                     Nothing ->
@@ -231,8 +235,8 @@ startMatch (Match playerA playerB) (League league) =
                 -- don't start a match with players that aren't in the
                 -- league...
                 Maybe.map2 Tuple.pair
-                    (Dict.get playerA.name league.players)
-                    (Dict.get playerB.name league.players)
+                    (Dict.get playerA.id league.players)
+                    (Dict.get playerB.id league.players)
                     |> Maybe.andThen
                         (\( gotA, gotB ) ->
                             -- ... or when the players are the same player

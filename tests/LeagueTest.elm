@@ -89,10 +89,10 @@ startMatchTests =
             \playerA playerB ->
                 let
                     uniqueA =
-                        { playerA | name = "real " ++ playerA.name }
+                        Player.init ("real " ++ playerA.name)
 
                     uniqueB =
-                        { playerB | name = "fake " ++ playerB.name }
+                        Player.init ("real " ++ playerB.name)
                 in
                 League.init
                     |> League.addPlayer uniqueA
@@ -103,7 +103,7 @@ startMatchTests =
             \playerA playerBMaybeSame ->
                 let
                     playerB =
-                        { playerBMaybeSame | name = "unique " ++ playerBMaybeSame.name }
+                        Player.init ("unique " ++ playerBMaybeSame.name)
                 in
                 League.init
                     |> League.addPlayer playerA
@@ -141,10 +141,10 @@ finishMatchTests =
                         |> League.startMatch (Match winner dummy)
                         |> League.finishMatch (Win { won = winner, lost = dummy })
                         |> Expect.all
-                            [ League.getPlayer winner.name
+                            [ League.getPlayer winner.id
                                 >> Maybe.map .matches
                                 >> Expect.equal (Just (winner.matches + 1))
-                            , League.getPlayer dummy.name
+                            , League.getPlayer dummy.id
                                 >> Maybe.map .matches
                                 >> Expect.equal (Just (dummy.matches + 1))
                             ]
@@ -162,10 +162,10 @@ finishMatchTests =
                         |> League.startMatch (Match winner dummy)
                         |> League.finishMatch (Win { won = winner, lost = dummy })
                         |> Expect.all
-                            [ League.getPlayer winner.name
+                            [ League.getPlayer winner.id
                                 >> Maybe.map .rating
                                 >> Expect.equal (Just newRatings.won)
-                            , League.getPlayer dummy.name
+                            , League.getPlayer dummy.id
                                 >> Maybe.map .rating
                                 >> Expect.equal (Just newRatings.lost)
                             ]
@@ -188,10 +188,10 @@ finishMatchTests =
                         |> League.startMatch (Match player dummy)
                         |> League.finishMatch (Draw { playerA = player, playerB = dummy })
                         |> Expect.all
-                            [ League.getPlayer player.name
+                            [ League.getPlayer player.id
                                 >> Maybe.map .matches
                                 >> Expect.equal (Just (player.matches + 1))
-                            , League.getPlayer dummy.name
+                            , League.getPlayer dummy.id
                                 >> Maybe.map .matches
                                 >> Expect.equal (Just (dummy.matches + 1))
                             ]
@@ -217,10 +217,10 @@ finishMatchTests =
                         |> League.startMatch (Match player dummy)
                         |> League.finishMatch (Draw { playerA = player, playerB = dummy })
                         |> Expect.all
-                            [ League.getPlayer player.name
+                            [ League.getPlayer player.id
                                 >> Maybe.map .rating
                                 >> Expect.equal (Just newRatings.playerA)
-                            , League.getPlayer dummy.name
+                            , League.getPlayer dummy.id
                                 >> Maybe.map .rating
                                 >> Expect.equal (Just newRatings.playerB)
                             ]
