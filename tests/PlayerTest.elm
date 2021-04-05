@@ -21,7 +21,10 @@ roundTripDecoderTest =
 playerFuzzer : Fuzzer Player
 playerFuzzer =
     Fuzz.map4 Player
-        (Fuzz.map (Murmur3.hashString 0) nameFuzzer)
+        (nameFuzzer
+            |> Fuzz.map (Murmur3.hashString 0)
+            |> Fuzz.map Player.playerIdFromIntForTestOnly
+        )
         nameFuzzer
         (Fuzz.intRange 1000 3000)
         (Fuzz.intRange 0 50)
@@ -51,6 +54,6 @@ decoderTest =
                         ]
                         |> Decode.decodeValue Player.decoder
                         |> Result.map .id
-                        |> Expect.equal (Ok 123038886)
+                        |> Expect.equal (Ok (Player.playerIdFromIntForTestOnly 123038886))
             ]
         ]

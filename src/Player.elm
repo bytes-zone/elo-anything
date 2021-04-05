@@ -1,4 +1,4 @@
-module Player exposing (Player, decoder, encode, incrementMatchesPlayed, init, setRating)
+module Player exposing (Player, PlayerId, decoder, encode, incrementMatchesPlayed, init, playerIdFromIntForTestOnly, setRating)
 
 import Elo
 import Json.Decode as Decode exposing (Decoder)
@@ -6,8 +6,17 @@ import Json.Encode as Encode exposing (Value)
 import Murmur3
 
 
+type PlayerId
+    = PlayerId Int
+
+
+playerIdFromIntForTestOnly : Int -> PlayerId
+playerIdFromIntForTestOnly =
+    PlayerId
+
+
 type alias Player =
-    { id : Int
+    { id : PlayerId
     , name : String
     , rating : Int
     , matches : Int
@@ -16,7 +25,7 @@ type alias Player =
 
 init : String -> Player
 init name =
-    { id = Murmur3.hashString 0 name
+    { id = PlayerId (Murmur3.hashString 0 name)
     , name = name
     , rating = Elo.initialRating
     , matches = 0
@@ -41,6 +50,7 @@ decoder =
             , Decode.field "name" Decode.string
                 |> Decode.map (Murmur3.hashString 0)
             ]
+            |> Decode.map PlayerId
         )
         (Decode.field "name" Decode.string)
         (Decode.field "rating" Decode.int)
@@ -49,8 +59,12 @@ decoder =
 
 encode : Player -> Value
 encode { id, name, rating, matches } =
+    let
+        (PlayerId idInt) =
+            id
+    in
     Encode.object
-        [ ( "id", Encode.int id )
+        [ ( "id", Encode.int idInt )
         , ( "name", Encode.string name )
         , ( "rating", Encode.int rating )
         , ( "matches", Encode.int matches )
