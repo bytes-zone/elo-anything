@@ -9,28 +9,26 @@ import Player exposing (Player)
 import Test exposing (..)
 
 
-roundTripDecoderTest : Test
-roundTripDecoderTest =
-    fuzz playerFuzzer "encode and decode are symmetrical" <|
-        \player ->
-            Player.encode player
-                |> Decode.decodeValue Player.decoder
-                |> Expect.equal (Ok player)
-
-
-decoderTest : Test
-decoderTest =
-    describe "decoder"
-        [ describe "id"
-            [ test "is OK with a missing ID" <|
-                \_ ->
-                    Encode.object
-                        [ ( "name", Encode.string "Test" )
-                        , ( "rating", Encode.int 1200 )
-                        , ( "matches", Encode.int 0 )
-                        ]
-                        |> Decode.decodeValue Player.decoder
-                        |> Expect.ok
+interopTest : Test
+interopTest =
+    describe "interop"
+        [ fuzz playerFuzzer "encode and decode are symmetrical" <|
+            \player ->
+                Player.encode player
+                    |> Decode.decodeValue Player.decoder
+                    |> Expect.equal (Ok player)
+        , describe "decoder"
+            [ describe "id"
+                [ test "is OK with a missing ID" <|
+                    \_ ->
+                        Encode.object
+                            [ ( "name", Encode.string "Test" )
+                            , ( "rating", Encode.int 1200 )
+                            , ( "matches", Encode.int 0 )
+                            ]
+                            |> Decode.decodeValue Player.decoder
+                            |> Expect.ok
+                ]
             ]
         ]
 
