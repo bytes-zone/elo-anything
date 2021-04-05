@@ -3,6 +3,8 @@ module PlayerTest exposing (..)
 import Expect
 import Fuzz exposing (Fuzzer)
 import Json.Decode as Decode
+import Json.Encode as Encode
+import Murmur3
 import Player exposing (Player)
 import Test exposing (..)
 
@@ -18,7 +20,8 @@ roundTripDecoderTest =
 
 playerFuzzer : Fuzzer Player
 playerFuzzer =
-    Fuzz.map3 Player
+    Fuzz.map4 Player
+        (Fuzz.map (Murmur3.hashString 0) nameFuzzer)
         nameFuzzer
         (Fuzz.intRange 1000 3000)
         (Fuzz.intRange 0 50)
@@ -33,3 +36,21 @@ nameFuzzer =
     in
     Fuzz.map2 (::) chars (Fuzz.list chars)
         |> Fuzz.map String.fromList
+
+
+decoderTest : Test
+decoderTest =
+    describe "decoder"
+        [ describe "id"
+            [ test "fills in the ID if it's missing" <|
+                \_ ->
+                    Encode.object
+                        [ ( "name", Encode.string "Test" )
+                        , ( "rating", Encode.int 1200 )
+                        , ( "matches", Encode.int 0 )
+                        ]
+                        |> Decode.decodeValue Player.decoder
+                        |> Result.map .id
+                        |> Expect.equal (Ok 123038886)
+            ]
+        ]
