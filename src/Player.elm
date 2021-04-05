@@ -1,16 +1,15 @@
 module Player exposing
-    ( Player, init
+    ( Player, init, htmlKey
     , PlayerId, id, idSorter
     , name
     , rating, setRating
     , matchesPlayed, setMatchesPlayedTestOnly, incrementMatchesPlayed
-    , encode
-    , decoder
+    , encode, decoder
     )
 
 {-|
 
-@docs Player, init
+@docs Player, init, htmlKey
 
 @docs PlayerId, id, idSorter
 
@@ -20,7 +19,7 @@ module Player exposing
 
 @docs matchesPlayed, setMatchesPlayedTestOnly, incrementMatchesPlayed
 
-@docs encode, decode
+@docs encode, decoder
 
 -}
 
@@ -48,6 +47,15 @@ init name_ =
         , rating = Elo.initialRating
         , matches = 0
         }
+
+
+htmlKey : Player -> String
+htmlKey (Player player) =
+    let
+        (PlayerId idInt) =
+            player.id
+    in
+    String.fromInt idInt
 
 
 

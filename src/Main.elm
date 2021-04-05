@@ -267,7 +267,7 @@ currentMatch model =
         Just (League.Match playerA playerB) ->
             let
                 chanceAWins =
-                    Elo.odds playerA.rating playerB.rating
+                    Elo.odds (Player.rating playerA) (Player.rating playerB)
             in
             Html.section
                 [ css
@@ -403,7 +403,7 @@ activePlayer player =
             , openSans
             ]
         ]
-        [ Html.text player.name ]
+        [ Html.text (Player.name player) ]
 
 
 rankings : Model -> Html Msg
@@ -413,8 +413,8 @@ rankings model =
             History.peekBack model.history
                 |> Maybe.withDefault (History.current model.history)
                 |> League.players
-                |> List.sortBy (\player -> -player.rating)
-                |> List.indexedMap (\rank player -> ( player.name, rank ))
+                |> List.sortBy (\player -> -(Player.rating player))
+                |> List.indexedMap (\rank player -> ( Player.name player, rank ))
                 |> Dict.fromList
 
         numeric =
@@ -465,21 +465,21 @@ rankings model =
     in
     History.current model.history
         |> League.players
-        |> List.sortBy (\player -> -player.rating)
+        |> List.sortBy (\player -> -(Player.rating player))
         |> List.indexedMap
             (\rank player ->
                 let
                     previousRank =
-                        Dict.get player.name previousStandings
+                        Dict.get (Player.name player) previousStandings
                             |> Maybe.withDefault rank
 
                     isPlaying =
                         History.current model.history
                             |> League.currentMatch
-                            |> Maybe.map (\(League.Match a b) -> player == a || player == b)
+                            |> Maybe.map (\(League.Match a b) -> Player.id player == Player.id a || Player.id player == Player.id b)
                             |> Maybe.withDefault False
                 in
-                ( player.name
+                ( Player.htmlKey player
                 , Html.tr
                     [ css [ Css.height (Css.px 60) ] ]
                     [ Html.td
@@ -523,13 +523,13 @@ rankings model =
                         [ Html.text (String.fromInt (rank + 1)) ]
                     , Html.td
                         [ css [ numeric, shrinkWidth, center ] ]
-                        [ Html.text (String.fromInt player.rating) ]
+                        [ Html.text (String.fromInt (Player.rating player)) ]
                     , Html.td
                         [ css [ numeric, shrinkWidth, center ] ]
-                        [ Html.text (String.fromInt player.matches) ]
+                        [ Html.text (String.fromInt (Player.matchesPlayed player)) ]
                     , Html.td
                         [ css [ textual, left ] ]
-                        [ Html.text player.name ]
+                        [ Html.text (Player.name player) ]
                     , Html.td
                         [ css [ textual, shrinkWidth, center ] ]
                         [ redButton "Retire" (Just (KeeperWantsToRetirePlayer player)) ]
