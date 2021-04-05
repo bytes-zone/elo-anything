@@ -18,6 +18,23 @@ roundTripDecoderTest =
                 |> Expect.equal (Ok player)
 
 
+decoderTest : Test
+decoderTest =
+    describe "decoder"
+        [ describe "id"
+            [ test "is OK with a missing ID" <|
+                \_ ->
+                    Encode.object
+                        [ ( "name", Encode.string "Test" )
+                        , ( "rating", Encode.int 1200 )
+                        , ( "matches", Encode.int 0 )
+                        ]
+                        |> Decode.decodeValue Player.decoder
+                        |> Expect.ok
+            ]
+        ]
+
+
 playerFuzzer : Fuzzer Player
 playerFuzzer =
     Fuzz.map3
@@ -36,20 +53,3 @@ nameFuzzer =
     Fuzz.intRange (Char.toCode 'a') (Char.toCode 'c')
         |> Fuzz.map Char.fromCode
         |> Fuzz.map String.fromChar
-
-
-decoderTest : Test
-decoderTest =
-    describe "decoder"
-        [ describe "id"
-            [ test "is OK with a missing ID" <|
-                \_ ->
-                    Encode.object
-                        [ ( "name", Encode.string "Test" )
-                        , ( "rating", Encode.int 1200 )
-                        , ( "matches", Encode.int 0 )
-                        ]
-                        |> Decode.decodeValue Player.decoder
-                        |> Expect.ok
-            ]
-        ]
