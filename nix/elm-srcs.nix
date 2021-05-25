@@ -36,8 +36,8 @@
       };
 
       "rtfeldman/elm-css" = {
-        sha256 = "0nxiyxyw3kw55whkpwhrcgc0dr6a8zlm2nqvsaqdw6mzkykg0ba6";
-        version = "16.1.0";
+        sha256 = "189pf91bdpyz4qyilbzjh2mj3x46j7abb9asnkiv1chzvhcamrn5";
+        version = "16.1.1";
       };
 
       "elm/core" = {
@@ -56,8 +56,8 @@
       };
 
       "BrianHicks/elm-css-reset" = {
-        sha256 = "1cbdhm9pmzrb6ch2wfrxqma5h6cska557abg85bbdk4m88fy7ry9";
-        version = "1.0.1";
+        sha256 = "1f1i23wmw5yzhxwc5klpijw32gpsyvz3nx2198ylbffpsxw5q4pk";
+        version = "1.0.2";
       };
 
       "elm/bytes" = {
