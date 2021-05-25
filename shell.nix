@@ -6,8 +6,7 @@ let
 
   niv = import sources.niv { };
 in with nixpkgs;
-stdenv.mkDerivation {
-  name = "elo-anything";
+mkShell {
   buildInputs = [
     niv.niv
     git
