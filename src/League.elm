@@ -264,10 +264,19 @@ finishMatch outcome league =
                         { won = Player.rating won
                         , lost = Player.rating lost
                         }
+
+                newPlayers =
+                    updateRatingsIncludingPlayInPeriod
+                        { playerA = newRatings.won
+                        , playerB = newRatings.lost
+                        }
+                        { playerA = won
+                        , playerB = lost
+                        }
             in
             league
-                |> updatePlayer (Player.incrementMatchesPlayed (Player.setRating newRatings.won won))
-                |> updatePlayer (Player.incrementMatchesPlayed (Player.setRating newRatings.lost lost))
+                |> updatePlayer newPlayers.playerA
+                |> updatePlayer newPlayers.playerB
                 |> clearMatch
 
         Draw { playerA, playerB } ->
@@ -277,11 +286,49 @@ finishMatch outcome league =
                         { playerA = Player.rating playerA
                         , playerB = Player.rating playerB
                         }
+
+                newPlayers =
+                    updateRatingsIncludingPlayInPeriod
+                        newRatings
+                        { playerA = playerA
+                        , playerB = playerB
+                        }
             in
             league
-                |> updatePlayer (Player.incrementMatchesPlayed (Player.setRating newRatings.playerA playerA))
-                |> updatePlayer (Player.incrementMatchesPlayed (Player.setRating newRatings.playerB playerB))
+                |> updatePlayer newPlayers.playerA
+                |> updatePlayer newPlayers.playerB
                 |> clearMatch
+
+
+updateRatingsIncludingPlayInPeriod :
+    { playerA : Int, playerB : Int }
+    -> { playerA : Player, playerB : Player }
+    -> { playerA : Player, playerB : Player }
+updateRatingsIncludingPlayInPeriod ratings players_ =
+    let
+        playerAInPlayInPeriod =
+            Player.matchesPlayed players_.playerA < playInMatches
+
+        playerBInPlayInPeriod =
+            Player.matchesPlayed players_.playerB < playInMatches
+    in
+    { playerA =
+        if not playerAInPlayInPeriod && playerBInPlayInPeriod then
+            players_.playerA
+
+        else
+            players_.playerA
+                |> Player.setRating ratings.playerA
+                |> Player.incrementMatchesPlayed
+    , playerB =
+        if not playerBInPlayInPeriod && playerAInPlayInPeriod then
+            players_.playerB
+
+        else
+            players_.playerB
+                |> Player.setRating ratings.playerB
+                |> Player.incrementMatchesPlayed
+    }
 
 
 {-| -}

@@ -8,7 +8,7 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import League exposing (League, Match(..), Outcome(..))
 import Player
-import PlayerTest exposing (playerFuzzer)
+import PlayerTest exposing (establishedPlayerFuzzer)
 import Test exposing (..)
 
 
@@ -55,14 +55,14 @@ decoderTests =
 playersTests : Test
 playersTests =
     describe "functionality around players"
-        [ fuzz playerFuzzer "adding a player makes them show up in the players list" <|
+        [ fuzz establishedPlayerFuzzer "adding a player makes them show up in the players list" <|
             \player ->
                 League.init
                     |> League.addPlayer player
                     |> League.players
                     |> List.map Player.name
                     |> Expect.equal [ Player.name player ]
-        , fuzz playerFuzzer "retiring a player removes them from the players list" <|
+        , fuzz establishedPlayerFuzzer "retiring a player removes them from the players list" <|
             \player ->
                 League.init
                     |> League.addPlayer player
@@ -79,13 +79,13 @@ playersTests =
 startMatchTests : Test
 startMatchTests =
     describe "startMatch"
-        [ fuzz2 playerFuzzer playerFuzzer "you can't start a match when neither player is in the league" <|
+        [ fuzz2 establishedPlayerFuzzer establishedPlayerFuzzer "you can't start a match when neither player is in the league" <|
             \playerA playerB ->
                 League.init
                     |> League.startMatch (Match playerA playerB)
                     |> League.currentMatch
                     |> Expect.equal Nothing
-        , fuzz2 playerFuzzer playerFuzzer "you can't start a match when one player isn't in the league" <|
+        , fuzz2 establishedPlayerFuzzer establishedPlayerFuzzer "you can't start a match when one player isn't in the league" <|
             \playerA playerB ->
                 let
                     uniqueA =
@@ -99,7 +99,7 @@ startMatchTests =
                     |> League.startMatch (Match uniqueA uniqueB)
                     |> League.currentMatch
                     |> Expect.equal Nothing
-        , fuzz2 playerFuzzer playerFuzzer "you can start a match between two players in the league" <|
+        , fuzz2 establishedPlayerFuzzer establishedPlayerFuzzer "you can start a match between two players in the league" <|
             \playerA playerBMaybeSame ->
                 let
                     playerB =
@@ -112,7 +112,7 @@ startMatchTests =
                     |> League.currentMatch
                     |> Maybe.map (\(Match a b) -> ( Player.name a, Player.name b ))
                     |> Expect.equal (Just ( Player.name playerA, Player.name playerB ))
-        , fuzz playerFuzzer "you can't start a match with one player against themselves" <|
+        , fuzz establishedPlayerFuzzer "you can't start a match with one player against themselves" <|
             \player ->
                 League.init
                     |> League.addPlayer player
@@ -127,6 +127,11 @@ finishMatchTests =
     let
         existingPlayer =
             Player.init "A"
+                |> Player.incrementMatchesPlayed
+                |> Player.incrementMatchesPlayed
+                |> Player.incrementMatchesPlayed
+                |> Player.incrementMatchesPlayed
+                |> Player.incrementMatchesPlayed
 
         league =
             League.init
@@ -134,7 +139,7 @@ finishMatchTests =
     in
     describe "finishMatch"
         [ describe "a win"
-            [ fuzz playerFuzzer "causes both players matches played to go up" <|
+            [ fuzz establishedPlayerFuzzer "causes both players matches played to go up" <|
                 \winner ->
                     league
                         |> League.addPlayer winner
@@ -148,7 +153,7 @@ finishMatchTests =
                                 >> Maybe.map Player.matchesPlayed
                                 >> Expect.equal (Just (Player.matchesPlayed existingPlayer + 1))
                             ]
-            , fuzz playerFuzzer "changes ratings according to Elo" <|
+            , fuzz establishedPlayerFuzzer "changes ratings according to Elo" <|
                 \winner ->
                     let
                         newRatings =
@@ -169,7 +174,7 @@ finishMatchTests =
                                 >> Maybe.map Player.rating
                                 >> Expect.equal (Just newRatings.lost)
                             ]
-            , fuzz playerFuzzer "does not change the total points in the system" <|
+            , fuzz establishedPlayerFuzzer "does not change the total points in the system" <|
                 \winner ->
                     league
                         |> League.addPlayer winner
@@ -181,7 +186,7 @@ finishMatchTests =
                         |> Expect.equal (Player.rating winner + Player.rating existingPlayer)
             ]
         , describe "a draw"
-            [ fuzz playerFuzzer "a draw causes both players matches played to go up" <|
+            [ fuzz establishedPlayerFuzzer "a draw causes both players matches played to go up" <|
                 \player ->
                     league
                         |> League.addPlayer player
@@ -195,7 +200,7 @@ finishMatchTests =
                                 >> Maybe.map Player.matchesPlayed
                                 >> Expect.equal (Just (Player.matchesPlayed existingPlayer + 1))
                             ]
-            , fuzz playerFuzzer "a draw changes ratings according to Elo" <|
+            , fuzz establishedPlayerFuzzer "a draw changes ratings according to Elo" <|
                 \player ->
                     let
                         newRatings =
@@ -224,7 +229,7 @@ finishMatchTests =
                                 >> Maybe.map Player.rating
                                 >> Expect.equal (Just newRatings.playerB)
                             ]
-            , fuzz playerFuzzer "a draw does not change the total points in the system" <|
+            , fuzz establishedPlayerFuzzer "a draw does not change the total points in the system" <|
                 \player ->
                     league
                         |> League.addPlayer player
@@ -244,5 +249,5 @@ finishMatchTests =
 
 leagueFuzzer : Fuzzer League
 leagueFuzzer =
-    Fuzz.list playerFuzzer
+    Fuzz.list establishedPlayerFuzzer
         |> Fuzz.map (List.foldr League.addPlayer League.init)

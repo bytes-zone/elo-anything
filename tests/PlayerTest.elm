@@ -13,7 +13,7 @@ import Test exposing (..)
 interopTest : Test
 interopTest =
     describe "interop"
-        [ fuzz playerFuzzer "encode and decode are symmetrical" <|
+        [ fuzz establishedPlayerFuzzer "encode and decode are symmetrical" <|
             \player ->
                 Player.encode player
                     |> Decode.decodeValue Player.decoder
@@ -85,8 +85,8 @@ ratingTest =
         ]
 
 
-playerFuzzer : Fuzzer Player
-playerFuzzer =
+establishedPlayerFuzzer : Fuzzer Player
+establishedPlayerFuzzer =
     Fuzz.map3
         (\name rating matches ->
             Player.init name
@@ -95,7 +95,7 @@ playerFuzzer =
         )
         nameFuzzer
         (Fuzz.intRange 1000 3000)
-        (Fuzz.intRange 0 50)
+        (Fuzz.intRange 5 50)
 
 
 nameFuzzer : Fuzzer String
