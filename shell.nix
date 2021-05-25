@@ -15,6 +15,7 @@ stdenv.mkDerivation {
     # Elm
     elmPackages.elm
     elmPackages.elm-format
+    elmPackages.elm-json
     elmPackages.elm-test
     elm2nix
 
