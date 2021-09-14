@@ -20,11 +20,6 @@
             registryDat = ./nix/registry.dat;
           };
 
-          doCheck = true;
-          checkPhase = ''
-            env ELM_HOME=.elm elm-test
-          '';
-
           installPhase = ''
             make dist
             mkdir -p $out/share/
