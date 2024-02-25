@@ -79,7 +79,7 @@
         # for debugging, if needed
         # packages.container = pkgs.dockerTools.buildLayeredImage {
         packages.container = pkgs.dockerTools.streamLayeredImage {
-          name = "elo";
+          name = "elo-anything";
 
           # make /var/log/nginx so Nginx doesn't fail trying to open it (which
           # it does no matter what you say in log settings, apparently.
