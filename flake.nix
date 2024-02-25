@@ -11,7 +11,7 @@
         # `nix build`
         packages.elo-anything = pkgs.stdenv.mkDerivation {
           name = "elo-anything";
-          src = ./.;
+          src = builtins.filterSource (path: type: builtins.match ".+(flake.nix|flake.lock|.github)$" path == null) ./.;
 
           buildInputs = [ pkgs.elmPackages.elm pkgs.elmPackages.elm-test ];
           buildPhase = pkgs.elmPackages.fetchElmDeps {
