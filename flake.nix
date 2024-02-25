@@ -8,6 +8,9 @@
     flake-utils.lib.eachDefaultSystem (system:
       let pkgs = nixpkgs.legacyPackages.${system};
       in rec {
+        # `nix fmt`
+        formatter = pkgs.nixpkgs-fmt;
+
         # `nix build`
         packages.elo-anything = pkgs.stdenv.mkDerivation {
           name = "elo-anything";
