@@ -93,7 +93,7 @@ jobs:
         run: |
           nix-shell \
             -p kustomize \
-            --run 'cd manifests/apps/elo && kustomize edit set image ${{ needs.push.outputs.image }}'
+            --run 'cd manifests/apps/elo-anything && kustomize edit set image ${{ needs.push.outputs.image }}'
 
       - name: commit and push changes
         run: |
