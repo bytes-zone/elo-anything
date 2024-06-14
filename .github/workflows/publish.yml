@@ -89,4 +89,4 @@ jobs:
 
       - name: update manifest
         run: |
-          ./update-job-image-gha.sh bytes-zone ${{ needs.push.outputs.image }}
+          ./update-job-image-gha.sh elo-anything ${{ needs.push.outputs.image }}
