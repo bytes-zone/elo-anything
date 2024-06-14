@@ -86,23 +86,7 @@ jobs:
           repository: bytes-zone/infrastructure.v2
           ref: main
           ssh-key: ${{ secrets.DEPLOY_KEY }}
-      - uses: DeterminateSystems/nix-installer-action@v9
-      - uses: DeterminateSystems/magic-nix-cache-action@v3
 
       - name: update manifest
         run: |
-          nix-shell \
-            -p kustomize \
-            --run 'cd manifests/apps/elo-anything && kustomize edit set image ${{ needs.push.outputs.image }}'
-
-      - name: commit and push changes
-        run: |
-          DIFF="$(git diff | tee /dev/stderr)"
-          if test -n "$DIFF"; then
-            git config --global user.name "Github Actions"
-            git config --global user.email "noreply@github.com"
-
-            git add manifests/apps/elo-anything
-            git commit --message "update elo-anything to ${{ needs.push.outputs.image }}"
-            git push
-          fi
+          ./update-job-image-gha.sh bytes-zone ${{ needs.push.outputs.image }}
