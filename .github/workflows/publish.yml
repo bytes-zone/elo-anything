@@ -83,7 +83,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: bytes-zone/infrastructure.v2
+          repository: bytes-zone/infrastructure.v3
           ref: main
           ssh-key: ${{ secrets.DEPLOY_KEY }}
 
