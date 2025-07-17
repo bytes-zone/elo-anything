@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: DeterminateSystems/nix-installer-action@v18
-      - uses: DeterminateSystems/magic-nix-cache-action@v12
+      - uses: DeterminateSystems/magic-nix-cache-action@v13
       - uses: nixbuild/nixbuild-action@v20
         with:
           nixbuild_token: ${{ secrets.NIXBUILD_TOKEN }}
