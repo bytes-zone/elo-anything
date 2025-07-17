@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@v18
+      - uses: DeterminateSystems/nix-installer-action@v19
       - uses: DeterminateSystems/magic-nix-cache-action@v13
       - uses: nixbuild/nixbuild-action@v20
         with:
