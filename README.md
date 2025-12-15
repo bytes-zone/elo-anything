@@ -21,6 +21,10 @@ Essentially, it solves my problems in the following ways:
 3. I can see the rankings as I'm making choices.
 4. There's still no undo, but I can add it if I find that it's really a problem! (So far I haven't.)
 
+## Other Implementations
+
+Urs Ganse has made a TUI version of ELO Anything in Common Lisp, available at [github.com/ursg/eloTodo](https://github.com/ursg/eloTodo). It is intended to be compatible with the save files produced by the web version.
+
 ## Building
 
 You don't have to build anything.
