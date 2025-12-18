@@ -1,4 +1,4 @@
-FROM alpine:3.23.0 AS build
+FROM alpine:3.23.2 AS build
 
 ADD https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz elm.gz
 RUN gunzip -c elm.gz > /usr/bin/elm && chmod +x /usr/bin/elm
