@@ -29,6 +29,8 @@ jobs:
         with:
           context: .
           push: ${{ github.ref == 'refs/heads/main' }}
-          tags: ghcr.io/bytes-zone/elo-anything:${{ github.sha }}
+          tags: |
+            ghcr.io/bytes-zone/elo-anything:${{ github.sha }}
+            ghcr.io/bytes-zone/elo-anything:main
           cache-from: type=gha
           cache-to: type=gha,mode=max
